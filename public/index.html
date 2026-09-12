@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>우리들의 생각 나눔터 - Material Padlet Board</title>
+  
+  <!-- Google Fonts: Google Sans / Roboto & Material Symbols -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Roboto:wght@400;500;700&family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Top App Bar (Material 3) -->
+  <header class="top-app-bar">
+    <div class="brand-section">
+      <div class="brand-icon">
+        <span class="material-symbols-outlined">dashboard_customize</span>
+      </div>
+      <div>
+        <h1 class="brand-title">생각 나눔 보드</h1>
+        <p class="brand-subtitle">Google Material Design 3 Padlet</p>
+      </div>
+    </div>
+
+    <div class="search-bar-container">
+      <div class="m3-search-box">
+        <span class="material-symbols-outlined" style="color: var(--md-sys-color-secondary);">search</span>
+        <input type="text" id="searchInput" placeholder="친구 이름이나 이야기 검색하기...">
+      </div>
+    </div>
+
+    <div class="actions-section">
+      <div id="userProfileArea" style="display: none; align-items: center; gap: 8px;">
+        <img id="userAvatar" src="" alt="프로필" style="width: 32px; height: 32px; border-radius: 50%;">
+        <span id="userName" style="font-size: 14px; font-weight: 500;"></span>
+      </div>
+      <button class="m3-button-tonal" id="googleLoginBtn">
+        <span class="material-symbols-outlined">login</span>
+        <span>구글 로그인</span>
+      </button>
+      <button class="m3-button-tonal" id="googleLogoutBtn" style="display: none;">
+        <span class="material-symbols-outlined">logout</span>
+        <span>로그아웃</span>
+      </button>
+      <button class="m3-icon-button" id="themeToggleBtn" title="다크/라이트 테마 변경">
+        <span class="material-symbols-outlined" id="themeIcon">dark_mode</span>
+      </button>
+      <button class="m3-button-tonal" id="settingsBtn" title="Firebase DB 설정">
+        <span class="material-symbols-outlined">settings</span>
+        <span>DB 설정</span>
+      </button>
+      <button class="m3-button-filled" id="openNewPostBtn">
+        <span class="material-symbols-outlined">add</span>
+        <span>새 글 쓰기</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Sync Status Bar -->
+  <div class="sync-banner" id="syncBanner">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span class="material-symbols-outlined" style="font-size: 18px; color: var(--md-sys-color-primary);">cloud_done</span>
+      <span id="syncStatusText">Firebase 실시간 동기화 준비 완료</span>
+    </div>
+    <span id="postCountBadge" style="font-weight: bold;">총 0개의 게시물</span>
+  </div>
+
+  <!-- Filter Category Chips -->
+  <div class="filter-bar">
+    <button class="filter-chip active" data-category="all">
+      <span class="material-symbols-outlined">apps</span>
+      <span>전체 보기</span>
+    </button>
+    <button class="filter-chip" data-category="💡 아이디어">
+      <span>💡 아이디어</span>
+    </button>
+    <button class="filter-chip" data-category="🎨 그림 & 창작">
+      <span>🎨 그림 & 창작</span>
+    </button>
+    <button class="filter-chip" data-category="📚 오늘의 배움">
+      <span>📚 오늘의 배움</span>
+    </button>
+    <button class="filter-chip" data-category="💬 질문 & 수다">
+      <span>💬 질문 & 수다</span>
+    </button>
+    <button class="filter-chip" data-category="🎉 칭찬해요">
+      <span>🎉 칭찬해요</span>
+    </button>
+  </div>
+
+  <!-- Main Board Grid -->
+  <main class="board-container">
+    <div class="posts-grid" id="postsGrid">
+      <!-- Dynamic Post Cards will render here -->
+    </div>
+  </main>
+
+  <!-- M3 Floating Action Button (Mobile & Quick Access) -->
+  <button class="m3-fab" id="fabNewPostBtn">
+    <span class="material-symbols-outlined">edit_note</span>
+    <span>포스트잇 붙이기</span>
+  </button>
+
+  <!-- New / Edit Post Modal Dialog -->
+  <div class="modal-overlay" id="postModal">
+    <div class="m3-dialog">
+      <div class="dialog-header">
+        <h2 class="dialog-title" id="modalTitle">새 포스트잇 붙이기</h2>
+        <button class="m3-icon-button" id="closeModalBtn">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <form id="postForm" style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="m3-text-field">
+          <label for="authorInput">작성자 (이름 / 별명)</label>
+          <input type="text" id="authorInput" placeholder="예: 민수, 지우" required maxlength="15">
+        </div>
+
+        <div class="m3-text-field">
+          <label for="categorySelect">주제 카테고리</label>
+          <select id="categorySelect">
+            <option value="💡 아이디어">💡 아이디어</option>
+            <option value="🎨 그림 & 창작">🎨 그림 & 창작</option>
+            <option value="📚 오늘의 배움">📚 오늘의 배움</option>
+            <option value="💬 질문 & 수다">💬 질문 & 수다</option>
+            <option value="🎉 칭찬해요">🎉 칭찬해요</option>
+          </select>
+        </div>
+
+        <div class="m3-text-field">
+          <label for="contentInput">남기고 싶은 이야기</label>
+          <textarea id="contentInput" rows="4" placeholder="친구들과 나누고 싶은 생각을 자유롭게 적어보세요..." required maxlength="500"></textarea>
+        </div>
+
+        <!-- Color Palette -->
+        <div class="m3-text-field">
+          <label>카드 배경 색상 (M3 톤온톤)</label>
+          <div class="palette-picker" id="palettePicker">
+            <div class="color-option selected" data-color="yellow" style="background-color: #fff9c4;" title="바닐라 옐로우"></div>
+            <div class="color-option" data-color="blue" style="background-color: #bbdefb;" title="스카이 블루"></div>
+            <div class="color-option" data-color="pink" style="background-color: #f8bbd0;" title="로즈 핑크"></div>
+            <div class="color-option" data-color="green" style="background-color: #c8e6c9;" title="민트 그린"></div>
+            <div class="color-option" data-color="purple" style="background-color: #e1bee7;" title="라벤더 퍼플"></div>
+          </div>
+        </div>
+
+        <div class="dialog-actions">
+          <button type="button" class="m3-button-tonal" id="cancelModalBtn">취소</button>
+          <button type="submit" class="m3-button-filled">
+            <span class="material-symbols-outlined">send</span>
+            <span>게시하기</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Firebase DB Config Modal -->
+  <div class="modal-overlay" id="configModal">
+    <div class="m3-dialog">
+      <div class="dialog-header">
+        <h2 class="dialog-title">Firebase DB 설정</h2>
+        <button class="m3-icon-button" id="closeConfigModalBtn">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <p style="font-size: 14px; color: var(--md-sys-color-secondary); line-height: 1.5;">
+        Firebase 콘솔의 <strong>프로젝트 설정 > 웹 앱 구성</strong>에서 발급받은 Firebase Config JSON 값을 입력하면 전 세계 어디서든 실시간으로 글이 저장되고 동기화됩니다! (입력하지 않으면 로컬/브라우저 스토리지에 자동 저장됩니다.)
+      </p>
+
+      <form id="configForm" style="display: flex; flex-direction: column; gap: 14px;">
+        <div class="m3-text-field">
+          <label for="apiKeyInput">API Key</label>
+          <input type="text" id="apiKeyInput" placeholder="AIzaSy...">
+        </div>
+        <div class="m3-text-field">
+          <label for="projectIdInput">Project ID</label>
+          <input type="text" id="projectIdInput" placeholder="anti-project-20260912">
+        </div>
+        <div class="m3-text-field">
+          <label for="appIdInput">App ID</label>
+          <input type="text" id="appIdInput" placeholder="1:557809305576:web:...">
+        </div>
+
+        <div class="dialog-actions">
+          <button type="button" class="m3-button-tonal" id="resetConfigBtn">기본 모드로 초기화</button>
+          <button type="submit" class="m3-button-filled">저장 & 연결</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Firebase SDKs (Modular v10 CDN) -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

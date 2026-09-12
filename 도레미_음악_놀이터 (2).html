@@ -1,0 +1,1855 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>도레미 음악 놀이터</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+:root{
+  --bg:#F2F6FC;
+  --surface:#FFFFFF;
+  --ink:#1F2933;
+  --ink-soft:#5B6472;
+  --line:#E3E9F2;
+  --accent-a:#2D9CDB; /* A: 음이름 읽기 */
+  --accent-a-soft:#E6F4FC;
+  --accent-b:#FF6B4A; /* B: 리듬 치기 */
+  --accent-b-soft:#FFEEE8;
+  --accent-c:#14B8A6; /* C: 악보 변환 */
+  --accent-c-soft:#E3FAF6;
+  --accent-d:#8B5CF6; /* D: 작곡기 */
+  --accent-d-soft:#F1EBFE;
+  --teacher:#334155;
+  --good:#22C55E;
+  --bad:#EF4444;
+  --warn:#F59E0B;
+  --radius:18px;
+  --radius-sm:10px;
+  --shadow:0 6px 18px rgba(31,41,51,.08);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'Noto Sans KR',sans-serif;
+  min-height:100vh;
+  padding-bottom:40px;
+}
+h1,h2,h3,.display{font-family:'Jua','Noto Sans KR',sans-serif;}
+button{font-family:inherit;cursor:pointer;touch-action:manipulation;}
+input,select,textarea{font-family:inherit;}
+
+/* ===== 상단바 ===== */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 20px;background:var(--surface);
+  box-shadow:var(--shadow);position:sticky;top:0;z-index:50;
+  flex-wrap:wrap;gap:8px;
+}
+.topbar-left{display:flex;align-items:center;gap:10px;}
+.topbar-left h1{font-size:22px;margin:0;color:var(--accent-b);}
+.topbar-left p{margin:0;font-size:12px;color:var(--ink-soft);}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.nickname-badge{
+  background:var(--accent-a-soft);color:var(--accent-a);
+  padding:8px 14px;border-radius:999px;font-weight:700;font-size:13px;
+  display:flex;align-items:center;gap:6px;border:none;
+}
+.lock-btn{
+  background:var(--teacher);color:#fff;border:none;border-radius:999px;
+  padding:8px 14px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;
+}
+
+/* ===== 탭 ===== */
+.tabs{
+  display:flex;gap:8px;padding:14px 20px 0;flex-wrap:wrap;max-width:1100px;margin:0 auto;
+}
+.tab-btn{
+  border:none;border-radius:14px 14px 0 0;padding:12px 18px;font-weight:700;font-size:14px;
+  background:#dbe4f0;color:var(--ink-soft);transition:.15s;
+}
+.tab-btn[data-tab="a"].active{background:var(--accent-a);color:#fff;}
+.tab-btn[data-tab="b"].active{background:var(--accent-b);color:#fff;}
+.tab-btn[data-tab="c"].active{background:var(--accent-c);color:#fff;}
+.tab-btn[data-tab="d"].active{background:var(--accent-d);color:#fff;}
+
+main{max-width:1100px;margin:0 auto;padding:0 20px;}
+.tab-panel{
+  display:none;background:var(--surface);border-radius:0 18px 18px 18px;
+  box-shadow:var(--shadow);padding:24px;min-height:420px;
+}
+.tab-panel.active{display:block;}
+.panel-title{display:flex;align-items:center;gap:10px;margin-top:0;}
+.panel-desc{color:var(--ink-soft);font-size:14px;margin-top:-6px;margin-bottom:20px;}
+
+.card{
+  background:var(--bg);border-radius:var(--radius);padding:18px;margin-bottom:16px;
+}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+.btn{
+  border:none;border-radius:12px;padding:10px 18px;font-weight:700;font-size:14px;
+  background:#E3E9F2;color:var(--ink);min-height:44px;
+}
+.btn:active{transform:translateY(1px);}
+.btn-primary-a{background:var(--accent-a);color:#fff;}
+.btn-primary-b{background:var(--accent-b);color:#fff;}
+.btn-primary-c{background:var(--accent-c);color:#fff;}
+.btn-primary-d{background:var(--accent-d);color:#fff;}
+.btn-good{background:var(--good);color:#fff;}
+.btn-bad{background:var(--bad);color:#fff;}
+.btn.selected{outline:3px solid var(--ink);}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+
+select,input[type=text],input[type=number],input[type=password],textarea{
+  border:2px solid var(--line);border-radius:10px;padding:8px 10px;font-size:14px;min-height:40px;
+}
+textarea{min-height:80px;width:100%;font-family:monospace;}
+label.field-label{font-size:12px;color:var(--ink-soft);font-weight:700;display:block;margin-bottom:4px;}
+
+.feedback-good{color:var(--good);font-weight:900;}
+.feedback-bad{color:var(--bad);font-weight:900;}
+
+/* 모달 공통 */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(20,24,30,.55);display:none;
+  align-items:center;justify-content:center;z-index:100;padding:20px;
+}
+.modal-overlay.show{display:flex;}
+.modal-box{
+  background:#fff;border-radius:var(--radius);padding:26px;max-width:420px;width:100%;
+  box-shadow:0 20px 50px rgba(0,0,0,.25);
+}
+.modal-box h2{margin-top:0;}
+
+table.rank-table{width:100%;border-collapse:collapse;font-size:13px;}
+table.rank-table th,table.rank-table td{padding:6px 8px;text-align:center;border-bottom:1px solid var(--line);}
+table.rank-table tr.me{background:var(--accent-a-soft);font-weight:700;}
+
+.svg-wrap{overflow-x:auto;background:#fff;border-radius:var(--radius-sm);padding:10px;}
+.hit{cursor:pointer;}
+.note-el.hl rect.hitzone{fill:rgba(255,107,74,.28);}
+.dnote.hl rect.hitzone2{fill:rgba(139,92,246,.28);}
+.drum-btn.selected{outline:3px solid var(--accent-b);}
+.dur-btn.selected{outline:3px solid var(--accent-d);}
+.dur-btn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 10px;}
+
+.grade-badge{font-size:40px;font-weight:900;font-family:'Jua';}
+.confetti{position:fixed;top:-20px;width:10px;height:10px;z-index:200;pointer-events:none;border-radius:2px;}
+
+@media (max-width:640px){
+  .topbar-left h1{font-size:17px;}
+  .tab-btn{padding:10px 12px;font-size:12px;}
+  .tab-panel{padding:16px;border-radius:0 14px 14px 14px;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <h1>🎵 도레미 음악 놀이터</h1>
+    <p>초등 음악 기초 학습 웹앱</p>
+  </div>
+  <div class="topbar-right">
+    <button class="nickname-badge" id="nicknameBadge" onclick="Nickname.openModal()">👤 로그인</button>
+    <button class="lock-btn" id="teacherLockBtn" onclick="Teacher.openLoginModal()">🔒 교사용</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="a" onclick="App.switchTab('a')">A. 음이름 읽기</button>
+  <button class="tab-btn" data-tab="b" onclick="App.switchTab('b')">B. 리듬 치기</button>
+  <button class="tab-btn" data-tab="c" onclick="App.switchTab('c')">C. 악보→리듬악보</button>
+  <button class="tab-btn" data-tab="d" onclick="App.switchTab('d')">D. 오선보 작곡기</button>
+</div>
+
+<main>
+  <section class="tab-panel active" id="tab-a"></section>
+  <section class="tab-panel" id="tab-b"></section>
+  <section class="tab-panel" id="tab-c"></section>
+  <section class="tab-panel" id="tab-d"></section>
+</main>
+
+<!-- ===== 닉네임 로그인 모달 ===== -->
+<div class="modal-overlay" id="nicknameModal">
+  <div class="modal-box">
+    <h2>👤 닉네임을 입력해주세요</h2>
+    <p style="color:var(--ink-soft);font-size:13px;">랭킹에 표시될 이름이에요. 실제 이름 대신 별명을 사용해주세요! (2~10자, 한글/영문/숫자)</p>
+    <input type="text" id="nicknameInput" placeholder="예: 신나는염소" maxlength="10" style="width:100%;margin-bottom:10px;">
+    <div id="nicknameError" class="feedback-bad" style="font-size:12px;min-height:16px;"></div>
+    <div class="row" style="justify-content:flex-end;">
+      <button class="btn" onclick="Nickname.closeModal()">나중에</button>
+      <button class="btn btn-primary-a" onclick="Nickname.submit()">확인</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 교사용 비밀번호 모달 ===== -->
+<div class="modal-overlay" id="teacherPwModal">
+  <div class="modal-box">
+    <h2>🔒 교사용 페이지</h2>
+    <p style="color:var(--ink-soft);font-size:13px;">이 잠금은 학생이 실수로 설정을 바꾸지 않도록 막는 간단한 화면 잠금이에요. 진짜 보안 인증이 아니니 민감한 용도로 쓰지 마세요.</p>
+    <input type="password" id="teacherPwInput" placeholder="비밀번호" style="width:100%;margin-bottom:10px;">
+    <div id="teacherPwError" class="feedback-bad" style="font-size:12px;min-height:16px;"></div>
+    <div class="row" style="justify-content:flex-end;">
+      <button class="btn" onclick="Teacher.closeLoginModal()">취소</button>
+      <button class="btn" style="background:var(--teacher);color:#fff;" onclick="Teacher.submitLogin()">입장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 교사용 패널 모달 ===== -->
+<div class="modal-overlay" id="teacherPanelModal">
+  <div class="modal-box" style="max-width:700px;max-height:85vh;overflow-y:auto;">
+    <h2>🔧 교사용 콘텐츠 관리</h2>
+    <div id="teacherPanelBody"></div>
+    <div class="row" style="justify-content:flex-end;margin-top:14px;">
+      <button class="btn" onclick="Teacher.closePanel()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 랭킹 모달 ===== -->
+<div class="modal-overlay" id="rankModal">
+  <div class="modal-box" style="max-width:520px;max-height:80vh;overflow-y:auto;">
+    <h2>🏆 랭킹 (TOP 30)</h2>
+    <div id="rankBody"></div>
+    <div class="row" style="justify-content:flex-end;margin-top:10px;">
+      <button class="btn" onclick="Rank.closeModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===================================================================
+   전역 상수 및 유틸
+=================================================================== */
+const NOTE_NAMES = ['도','레','미','파','솔','라','시','도'];
+const NOTE_KEYS  = ['C','D','E','F','G','A','B','C'];
+const STAFF_IDX  = [-2,-1,0,1,2,3,4,5]; // 도(C4)~도(C5) 오선 위치 인덱스
+const NOTE_FREQ  = { // 등온율 기준, A4=440Hz
+  'C':261.63,'D':293.66,'E':329.63,'F':349.23,'G':392.00,'A':440.00,'B':493.88,'C5':523.25
+};
+function freqOf(letter, octaveUp){ return octaveUp ? NOTE_FREQ['C5'] : NOTE_FREQ[letter]; }
+
+function $(sel,root){return (root||document).querySelector(sel);}
+function $all(sel,root){return Array.from((root||document).querySelectorAll(sel));}
+function el(tag, attrs, children){
+  const e=document.createElement(tag);
+  if(attrs) for(const k in attrs){ if(k==='html') e.innerHTML=attrs[k]; else e.setAttribute(k,attrs[k]); }
+  (children||[]).forEach(c=>e.appendChild(c));
+  return e;
+}
+function fmtDate(ts){
+  const d=new Date(ts);
+  const p=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+/* ===================================================================
+   저장소 유틸
+   -----------------------------------------------------------------
+   이 파일은 "다운로드해서 여는 단일 HTML 파일" 형태로 배포되는 것을
+   기준으로 하므로, Claude 아티팩트 전용 API인 window.storage 대신
+   브라우저 localStorage를 사용한다 (교사용 콘텐츠/랭킹 문서 6장·3.6
+   참고: 아티팩트 환경 밖에서는 localStorage로 대체하라는 안내를 따름).
+   이 경우 데이터는 "이 브라우저/이 기기"에만 저장되고 다른 학생의
+   기기와는 공유되지 않는다는 한계가 있다.
+=================================================================== */
+const Store = {
+  KEYS:{
+    NICKNAME:'moolplay_nickname',
+    LEADERBOARD:'moolplay_leaderboard',
+    CUSTOM_SONGS:'moolplay_custom_songs',
+    CUSTOM_BASEPATTERNS:'moolplay_custom_basepatterns',
+    SETTINGS:'moolplay_settings',
+    TEACHER_PW:'moolplay_teacher_pw',
+    DRUM_SOUND:'moolplay_drum_sound'
+  },
+  get(key, fallback){
+    try{
+      const raw = localStorage.getItem(key);
+      if(raw===null || raw===undefined) return fallback;
+      return JSON.parse(raw);
+    }catch(e){ console.error('Store.get 실패', key, e); return fallback; }
+  },
+  set(key, value){
+    try{ localStorage.setItem(key, JSON.stringify(value)); return true; }
+    catch(e){ console.error('Store.set 실패', key, e); return false; }
+  },
+  remove(key){ try{ localStorage.removeItem(key); }catch(e){ console.error(e); } }
+};
+
+const DEFAULT_SETTINGS = {
+  bpmMin:60, bpmMax:160,
+  toleranceGood:100, tolerancePerfect:50,
+  questionCounts:[5,10,15],
+  gradeThresholds:{A:90,B:70,C:50}
+};
+function getSettings(){
+  const custom = Store.get(Store.KEYS.SETTINGS, null);
+  return custom ? Object.assign({}, DEFAULT_SETTINGS, custom) : Object.assign({}, DEFAULT_SETTINGS);
+}
+function gradeOf(score){
+  const t = getSettings().gradeThresholds;
+  if(score>=t.A) return {grade:'A', msg:'완벽해요! 최고예요!'};
+  if(score>=t.B) return {grade:'B', msg:'좋아요! 조금만 더 연습해봐요.'};
+  if(score>=t.C) return {grade:'C', msg:'기본기는 있어요. 몇 번 더 해볼까요?'};
+  return {grade:'D', msg:'처음엔 누구나 어려워요. 다시 도전!'};
+}
+function confettiBurst(){
+  const colors=['#FF6B4A','#2D9CDB','#F5C518','#22C55E','#8B5CF6'];
+  for(let i=0;i<40;i++){
+    const c=el('div',{class:'confetti'});
+    c.style.left=(Math.random()*100)+'vw';
+    c.style.background=colors[i%colors.length];
+    c.style.transform=`rotate(${Math.random()*360}deg)`;
+    document.body.appendChild(c);
+    const dur=1200+Math.random()*900;
+    c.animate([
+      {transform:c.style.transform+' translateY(0)', opacity:1},
+      {transform:c.style.transform+` translateY(${window.innerHeight+40}px)`, opacity:0.2}
+    ],{duration:dur, easing:'ease-in'});
+    setTimeout(()=>c.remove(), dur+50);
+  }
+}
+
+/* ===================================================================
+   오디오 엔진 (Web Audio API)
+   - 메트로놈 클릭, 드럼 소리 3종(우드블록/스네어/탐탐), 음정(도~시) 재생
+   - 실제 음원 파일을 쓰지 않고 전부 코드로 합성한다
+=================================================================== */
+const Audio_ = {
+  ctx:null,
+  _noiseBuffer:null,
+  ensure(){
+    if(!this.ctx){ this.ctx = new (window.AudioContext||window.webkitAudioContext)(); }
+    if(this.ctx.state==='suspended'){ this.ctx.resume(); }
+    return this.ctx;
+  },
+  // 스네어용 화이트노이즈 버퍼는 매번 새로 만들지 않고 한 번 만들어 재사용한다.
+  // (탭할 때마다 6000여 개 샘플을 다시 채우는 작업을 없애 입력 반응을 더 가볍게 한다)
+  _getNoiseBuffer(ctx){
+    if(!this._noiseBuffer){
+      const bufSize = Math.floor(ctx.sampleRate*0.15);
+      const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for(let i=0;i<bufSize;i++){ data[i]=Math.random()*2-1; }
+      this._noiseBuffer = buf;
+    }
+    return this._noiseBuffer;
+  },
+  // 메트로놈 클릭 (낮은 톤 "똑"). strong=true 이면 마디 첫박에서 약간 더 높고 크게
+  metronomeClick(strong){
+    const ctx=this.ensure();
+    const t0=ctx.currentTime;
+    const osc=ctx.createOscillator(); const gain=ctx.createGain();
+    osc.type='triangle'; osc.frequency.value= strong? 660:440;
+    gain.gain.setValueAtTime(strong?0.35:0.22, t0);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0+0.09);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(t0); osc.stop(t0+0.1);
+  },
+  // 드럼 소리 3종: 'wood' | 'snare' | 'tom'
+  drum(type){
+    const ctx=this.ensure();
+    const t0=ctx.currentTime;
+    if(type==='snare'){
+      const noise = ctx.createBufferSource(); noise.buffer=this._getNoiseBuffer(ctx);
+      const bp = ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=1800; bp.Q.value=0.8;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.6, t0);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0+0.12);
+      noise.connect(bp); bp.connect(gain); gain.connect(ctx.destination);
+      noise.start(t0); noise.stop(t0+0.15);
+    } else if(type==='tom'){
+      const osc=ctx.createOscillator(); const gain=ctx.createGain();
+      osc.type='sine';
+      osc.frequency.setValueAtTime(150, t0);
+      osc.frequency.exponentialRampToValueAtTime(80, t0+0.15);
+      gain.gain.setValueAtTime(0.6, t0);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0+0.18);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(t0); osc.stop(t0+0.2);
+    } else { // wood (기본값)
+      const osc=ctx.createOscillator(); const gain=ctx.createGain();
+      osc.type='square'; osc.frequency.value=950;
+      gain.gain.setValueAtTime(0.35, t0);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0+0.05);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(t0); osc.stop(t0+0.06);
+    }
+  },
+  // 음정 재생 (기능 D 작곡기용): letter는 'C'..'B', octaveUp이면 높은 도
+  pitch(letter, octaveUp, durMs){
+    const ctx=this.ensure();
+    const t0=ctx.currentTime;
+    const freq = freqOf(letter, octaveUp);
+    const osc=ctx.createOscillator(); const gain=ctx.createGain();
+    osc.type='sine'; osc.frequency.value=freq;
+    const dur = Math.max(0.08, durMs/1000);
+    gain.gain.setValueAtTime(0.001, t0);
+    gain.gain.linearRampToValueAtTime(0.4, t0+0.015);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0+dur);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(t0); osc.stop(t0+dur+0.02);
+    return freq;
+  }
+};
+function currentDrumSound(){ return Store.get(Store.KEYS.DRUM_SOUND, 'wood'); }
+function setDrumSound(type){ Store.set(Store.KEYS.DRUM_SOUND, type); }
+
+/* ===================================================================
+   리듬 토큰 파서 & 타임라인 빌더
+   -----------------------------------------------------------------
+   토큰 문법: (W|Hd|H|Qd|Q|Ed|E|S)(r)?(!)?(~)?
+     기본 길이(8분음표 단위): W=8 Hd=6 H=4 Qd=3 Q=2 Ed=1.5 E=1 S=0.5
+     r  = 쉼표      예) Qr(4분쉼표) Er(8분쉼표)
+     !  = 악센트(>)  예) Q!
+     ~  = 다음 음표와 붙임줄(타이)로 연결  예) Qd~
+   박자별 한 마디 총 8분음표 수 / 큰박 그룹:
+     2/4=4(2+2)  3/4=6(2+2+2)  4/4=8(2+2+2+2)  6/8=6(3+3)  12/8=12(3+3+3+3)
+=================================================================== */
+const DUR_MAP = {W:8, Hd:6, H:4, Qd:3, Q:2, Ed:1.5, E:1, S:0.5};
+const TIME_SIGS = {'2/4':4, '3/4':6, '4/4':8, '6/8':6, '12/8':12};
+const BEAT_GROUPS = {'2/4':[2,2], '3/4':[2,2,2], '4/4':[2,2,2,2], '6/8':[3,3], '12/8':[3,3,3,3]};
+const TOKEN_RE = /^(W|Hd|H|Qd|Q|Ed|E|S)(r)?(!)?(~)?$/;
+
+function parseToken(tok){
+  const m = TOKEN_RE.exec(tok.trim());
+  if(!m) return null;
+  return { durE: DUR_MAP[m[1]], isRest: !!m[2], accent: !!m[3], tie: !!m[4], base:m[1] };
+}
+function parseMeasure(tokens){
+  return tokens.map(parseToken).filter(Boolean);
+}
+function measureSumE(tokens){
+  return parseMeasure(tokens).reduce((s,n)=>s+n.durE,0);
+}
+function validateMeasures(measuresTokens, sigKey){
+  const total = TIME_SIGS[sigKey];
+  const errs=[];
+  measuresTokens.forEach((m,i)=>{
+    const sum = measureSumE(m);
+    if(Math.abs(sum-total)>0.01) errs.push(`마디 ${i+1}: 박자 합이 ${sum}인데 ${sigKey} 마디는 ${total}이어야 해요.`);
+  });
+  return errs;
+}
+// measuresTokens: [['Q','E','E','Q'], ['Hd','Qr'], ...] -> 절대 타임라인(8분음표 단위) 이벤트 배열
+function buildTimeline(measuresTokens){
+  const events=[]; let cursor=0;
+  measuresTokens.forEach((m,mi)=>{
+    const notes = parseMeasure(m);
+    notes.forEach((n,ni)=>{
+      events.push({ measureIdx:mi, idxInMeasure:ni, onsetE:cursor, durE:n.durE,
+                    isRest:n.isRest, accent:n.accent, tie:n.tie });
+      cursor += n.durE;
+    });
+  });
+  return { events, totalE: cursor };
+}
+// 붙임줄(타이)로 이어진 음표들을 하나의 "판정 구간"으로 묶는다
+function buildJudgeSegments(events){
+  const segs=[]; let i=0;
+  while(i<events.length){
+    const ev=events[i];
+    if(ev.isRest){ segs.push({onsetE:ev.onsetE, durE:ev.durE, isRest:true}); i++; continue; }
+    let durSum=ev.durE; let j=i;
+    while(events[j].tie && j+1<events.length && !events[j+1].isRest){ j++; durSum+=events[j].durE; }
+    segs.push({onsetE:ev.onsetE, durE:durSum, isRest:false, accent:ev.accent, firstIdx:i, lastIdx:j});
+    i=j+1;
+  }
+  return segs;
+}
+// 8분음표 단위 시간을 ms로 변환하기 위한 eighthMs 계산 (BPM = 큰박/분 기준)
+function eighthMsFor(sigKey, bpm){
+  const groupSize = BEAT_GROUPS[sigKey][0]; // 2 또는 3
+  const beatMs = 60000/bpm;
+  return beatMs/groupSize;
+}
+
+/* ===================================================================
+   리듬 노테이션 SVG 렌더러 (음높이 없이 "리듬 전용" 표기)
+   - 마디별로 셀을 배치하고, 음표는 음표머리+기둥+깃발, 쉼표는 막대 아이콘으로
+   - data-idx 속성으로 각 이벤트를 표시해 하이라이트/클릭 편집에 활용
+=================================================================== */
+const PX_PER_E = 20; // 8분음표 1개당 픽셀
+const MEASURE_GAP = 16;
+function renderRhythmSVG(measuresTokens, opts){
+  opts = opts || {};
+  const events = buildTimeline(measuresTokens).events;
+  const baseY = 60;
+  let x = 20;
+  const barXs=[x];
+  const parts=[];
+  let curMeasure = events.length? events[0].measureIdx : -1;
+  events.forEach((ev, idx)=>{
+    if(ev.measureIdx !== curMeasure){
+      barXs.push(x);
+      x += MEASURE_GAP;
+      curMeasure = ev.measureIdx;
+    }
+    const w = ev.durE*PX_PER_E;
+    const cx = x + Math.min(w/2, 16);
+    parts.push(renderCell(ev, x, w, cx, baseY, idx));
+    x += w;
+  });
+  barXs.push(x+6);
+  const totalW = x+20;
+  let bars = barXs.map(bx=>`<line x1="${bx}" y1="${baseY-34}" x2="${bx}" y2="${baseY+8}" stroke="#B8C4D6" stroke-width="2"/>`).join('');
+  // 타이(붙임줄) 곡선: 인접한 tie 이벤트 사이를 이어준다
+  let ties='';
+  for(let i=0;i<events.length-1;i++){
+    if(events[i].tie && !events[i].isRest && !events[i+1].isRest){
+      const x1 = 20 + eventPixelX(events, i);
+      const x2 = 20 + eventPixelX(events, i+1);
+      ties += `<path d="M ${x1+8} ${baseY-38} Q ${(x1+x2)/2+8} ${baseY-48} ${x2+8} ${baseY-38}" stroke="#8B5CF6" stroke-width="2" fill="none"/>`;
+    }
+  }
+  const svg = `<svg viewBox="0 0 ${totalW} 100" width="${totalW}" height="100" xmlns="http://www.w3.org/2000/svg" class="rhythm-svg">
+    <line x1="20" y1="${baseY}" x2="${totalW-14}" y2="${baseY}" stroke="#B8C4D6" stroke-width="1.5"/>
+    ${bars}
+    ${parts.join('')}
+    ${ties}
+  </svg>`;
+  return { svg, events, totalE: buildTimeline(measuresTokens).totalE };
+}
+// events 재계산 없이 픽셀 x 좌표를 구하기 위한 보조(렌더 시 계산한 값 재사용이 이상적이나, 단순화를 위해 재계산)
+function eventPixelX(events, idx){
+  let x=0, curMeasure = events.length? events[0].measureIdx:-1;
+  for(let i=0;i<=idx;i++){
+    if(events[i].measureIdx!==curMeasure){ x+=MEASURE_GAP; curMeasure=events[i].measureIdx; }
+    if(i<idx) x += events[i].durE*PX_PER_E;
+  }
+  return x;
+}
+// 진행(재생) 커서의 정확한 픽셀 위치 계산: renderRhythmSVG와 "완전히 동일한" 좌표 규칙을 사용해야
+// 재생 커서가 음표 위치와 어긋나지 않는다 (마디 사이 MEASURE_GAP까지 반영)
+function pixelXForElapsedE(measuresTokens, elapsedE){
+  let x=20, cursorE=0;
+  for(let mi=0; mi<measuresTokens.length; mi++){
+    if(mi>0) x += MEASURE_GAP;
+    const notes = parseMeasure(measuresTokens[mi]);
+    for(let ni=0; ni<notes.length; ni++){
+      const durE = notes[ni].durE;
+      if(elapsedE <= cursorE+durE+1e-6){
+        const within = Math.max(0, elapsedE-cursorE);
+        return x + within*PX_PER_E;
+      }
+      x += durE*PX_PER_E;
+      cursorE += durE;
+    }
+  }
+  return x;
+}
+function renderCell(ev, x, w, cx, baseY, idx){
+  let inner='';
+  if(ev.isRest){
+    inner += `<rect x="${x+w/2-9}" y="${baseY-6}" width="18" height="7" rx="3" fill="#94A3B8"/>`;
+    inner += `<rect x="${x+w/2-9}" y="${baseY-6}" width="4" height="7" fill="#64748B"/>`;
+    inner += `<rect x="${x+w/2+5}" y="${baseY-6}" width="4" height="7" fill="#64748B"/>`;
+  } else {
+    const nx = x+10;
+    inner += `<ellipse cx="${nx}" cy="${baseY}" rx="7" ry="5.5" fill="#1F2933" transform="rotate(-18 ${nx} ${baseY})"/>`;
+    inner += `<line x1="${nx+6.5}" y1="${baseY-2}" x2="${nx+6.5}" y2="${baseY-32}" stroke="#1F2933" stroke-width="2"/>`;
+    if(ev.durE<=1){ inner += flagPath(nx+6.5, baseY-32, 1); }
+    if(ev.durE<=0.5){ inner += flagPath(nx+6.5, baseY-32, 2); }
+    if([1.5,3,6].includes(ev.durE)){ inner += `<circle cx="${nx+13}" cy="${baseY}" r="2" fill="#1F2933"/>`; }
+    if(ev.accent){ inner += `<text x="${nx}" y="${baseY-38}" font-size="16" font-weight="900" text-anchor="middle" fill="#FF6B4A">&gt;</text>`; }
+  }
+  return `<g class="note-el" data-idx="${idx}"><rect class="hitzone" x="${x}" y="${baseY-40}" width="${w}" height="52" fill="transparent"/>${inner}</g>`;
+}
+function flagPath(x,y,n){
+  const dy = (n-1)*7;
+  return `<path d="M ${x} ${y+dy} q 10 4 9 16" stroke="#1F2933" stroke-width="2" fill="none"/>`;
+}
+// 팔레트 버튼에 쓰는 작은 음표/쉼표 아이콘 (한글 음가 이름 아래에 표시)
+function miniGlyphSVG(key){
+  const isRest = key.endsWith('r');
+  const c = '#8B5CF6';
+  if(isRest){
+    return `<svg viewBox="0 0 30 30" width="26" height="26" xmlns="http://www.w3.org/2000/svg">
+      <rect x="6" y="12" width="18" height="7" rx="3" fill="${c}"/>
+      <rect x="6" y="12" width="4" height="7" fill="#6D28D9"/>
+      <rect x="20" y="12" width="4" height="7" fill="#6D28D9"/>
+    </svg>`;
+  }
+  let inner='';
+  const filled = !['W','H','Hd'].includes(key);
+  inner += `<ellipse cx="10" cy="22" rx="7" ry="5.5" fill="${filled?c:'none'}" stroke="${c}" stroke-width="2" transform="rotate(-18 10 22)"/>`;
+  if(key!=='W'){
+    inner += `<line x1="16.5" y1="20" x2="16.5" y2="4" stroke="${c}" stroke-width="2"/>`;
+    if(key==='E'||key==='S'){ inner += `<path d="M16.5 4 q8 3 7 12" stroke="${c}" stroke-width="2" fill="none"/>`; }
+    if(key==='S'){ inner += `<path d="M16.5 11 q8 3 7 12" stroke="${c}" stroke-width="2" fill="none"/>`; }
+  }
+  if(['Qd','Ed','Hd'].includes(key)){ inner += `<circle cx="19" cy="22" r="2" fill="${c}"/>`; }
+  return `<svg viewBox="0 0 30 30" width="26" height="26" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+}
+
+/* ===================================================================
+   오선보(높은음자리표) 렌더러 - 기능 A / D 공용
+   도(C4)=index -2 ... 도(C5)=index 5 (한 옥타브), 필요 시 더 확장 가능
+=================================================================== */
+const STAFF_BOTTOM_Y = 150; // index 0 (미/E4, 첫째 줄) 의 y좌표
+function noteY(idx){ return STAFF_BOTTOM_Y - idx*8; }
+function renderStaffSVG(width){
+  width = width||360;
+  let lines='';
+  for(let i=0;i<5;i++){ const y=noteY(i*2); lines+=`<line x1="30" y1="${y}" x2="${width-10}" y2="${y}" stroke="#334155" stroke-width="1.5"/>`; }
+  const clef = `<path d="M52,${noteY(8)+6} C36,${noteY(8)+2} 34,${noteY(6)-2} 46,${noteY(4)}
+    C60,${noteY(2)+4} 60,${noteY(0)+6} 44,${noteY(-1)+8}
+    C33,${noteY(-2)+2} 30,${noteY(-2)-10} 40,${noteY(-2)-16}
+    C46,${noteY(-2)-20} 52,${noteY(-2)-14} 50,${noteY(-2)-8}"
+    stroke="#334155" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <circle cx="44" cy="${noteY(-1)+8}" r="3.4" fill="#334155"/>`;
+  return { svgOpen:`<svg viewBox="0 0 ${width} 220" width="${width}" height="220" xmlns="http://www.w3.org/2000/svg">${lines}${clef}`, svgClose:`</svg>` };
+}
+function noteHeadMarkup(x, idx, filled, extra){
+  extra = extra||'';
+  const y = noteY(idx);
+  let ledger='';
+  if(idx<=-2 && idx%2===0){ ledger = `<line x1="${x-12}" y1="${y}" x2="${x+12}" y2="${y}" stroke="#334155" stroke-width="1.5"/>`; }
+  if(idx>=10 && idx%2===0){ ledger = `<line x1="${x-12}" y1="${y}" x2="${x+12}" y2="${y}" stroke="#334155" stroke-width="1.5"/>`; }
+  return `${ledger}<ellipse cx="${x}" cy="${y}" rx="8" ry="6" fill="${filled?'#334155':'none'}" stroke="#334155" stroke-width="2" transform="rotate(-16 ${x} ${y})"/>${extra}`;
+}
+
+/* ===================================================================
+   기능 A: 도레미파솔라시도 오선보 읽기
+=================================================================== */
+const FeatureA = {
+  state:{ mode:'random', total:10, idx:0, score:0, sequence:[], answered:false, inputMode:'choice' },
+  init(){
+    const panel = $('#tab-a');
+    panel.innerHTML = `
+      <h2 class="panel-title" style="color:var(--accent-a);">🎼 A. 오선보 음이름 읽기</h2>
+      <p class="panel-desc">높은음자리표 오선보에 나온 음을 보고 도~시 중 어떤 음인지 맞혀보세요!</p>
+      <div class="card row">
+        <div>
+          <label class="field-label">출제 방식</label>
+          <select id="aMode">
+            <option value="random">무작위</option>
+            <option value="seq">순차(도→시)</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">문항 수</label>
+          <select id="aCount"></select>
+        </div>
+        <div>
+          <label class="field-label">답안 입력 방식</label>
+          <select id="aInputMode">
+            <option value="choice">보기 선택</option>
+            <option value="keyboard">키보드 입력(C~B)</option>
+          </select>
+        </div>
+        <button class="btn btn-primary-a" onclick="FeatureA.start()">🔄 새로 시작</button>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div id="aStaffWrap" class="svg-wrap" style="display:inline-block;"></div>
+        <div><button class="btn btn-primary-a" onclick="FeatureA.playCurrentNote()">🔊 소리 다시 듣기</button></div>
+        <div id="aQProgress" style="color:var(--ink-soft);font-size:13px;margin-top:6px;"></div>
+      </div>
+      <div class="card" id="aAnswerArea"></div>
+      <div id="aFeedback" style="min-height:70px;text-align:center;font-size:15px;"></div>
+      <div id="aResultArea"></div>
+      <div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">키보드 입력 모드 매핑: 도=C 레=D 미=E 파=F 솔=G 라=A 시=B</div>
+    `;
+    const sel = $('#aCount');
+    getSettings().questionCounts.forEach(n=>sel.appendChild(el('option',{value:n,html:n+'문항'})));
+    sel.value=10;
+    $('#aMode').onchange=e=>FeatureA.state.mode=e.target.value;
+    $('#aCount').onchange=e=>FeatureA.state.total=parseInt(e.target.value);
+    $('#aInputMode').onchange=e=>{ FeatureA.state.inputMode=e.target.value; FeatureA.renderAnswerArea(); };
+    document.addEventListener('keydown', FeatureA.onKeydown);
+    this.start();
+  },
+  start(){
+    const s=this.state;
+    s.mode = $('#aMode').value; s.total=parseInt($('#aCount').value); s.inputMode=$('#aInputMode').value;
+    s.idx=0; s.score=0; s.answered=false;
+    s.sequence=[];
+    for(let i=0;i<s.total;i++){
+      s.sequence.push(s.mode==='seq' ? i%8 : Math.floor(Math.random()*8));
+    }
+    $('#aResultArea').innerHTML='';
+    this.renderQuestion();
+  },
+  renderQuestion(){
+    const s=this.state;
+    const {svgOpen, svgClose} = renderStaffSVG(180);
+    const idx = STAFF_IDX[s.sequence[s.idx]];
+    const note = `<g id="aNoteG">${noteHeadMarkup(120, idx, true)}</g>`;
+    $('#aStaffWrap').innerHTML = svgOpen+note+svgClose;
+    $('#aQProgress').textContent = `${s.idx+1} / ${s.total} 문항`;
+    $('#aFeedback').innerHTML='';
+    s.answered=false;
+    this.renderAnswerArea();
+    this.playCurrentNote();
+  },
+  playCurrentNote(){
+    const s=this.state;
+    const correctIdx = s.sequence[s.idx];
+    Audio_.ensure();
+    Audio_.pitch(NOTE_KEYS[correctIdx], correctIdx===7, 650);
+  },
+  renderAnswerArea(){
+    const area = $('#aAnswerArea');
+    if(this.state.inputMode==='choice'){
+      area.innerHTML = `<div class="row" style="justify-content:center;">${NOTE_NAMES.map((n,i)=>`<button class="btn btn-primary-a" onclick="FeatureA.answer(${i})">${n}</button>`).join('')}</div>`;
+    } else {
+      area.innerHTML = `<div style="text-align:center;color:var(--ink-soft);">키보드로 C~B 중 한 글자를 눌러보세요 (마지막 도는 C 또는 아무 C나)</div>`;
+    }
+  },
+  onKeydown(e){
+    if(!$('#tab-a').classList.contains('active')) return;
+    if(FeatureA.state.inputMode!=='keyboard') return;
+    const letter = e.key.toUpperCase();
+    const keyIdx = NOTE_KEYS.indexOf(letter);
+    if(keyIdx===-1) return;
+    // C는 도(처음) 또는 도(마지막) 둘 다 될 수 있으니 정답 인덱스와 letter만 비교
+    FeatureA.answerByLetter(letter);
+  },
+  answerByLetter(letter){
+    const s=this.state; if(s.answered) return;
+    const correctIdx = s.sequence[s.idx];
+    // 도(C)는 첫 도/높은 도 둘 다에 매핑되는 모호함이 있어, 정답이 높은 도(idx7)이고
+    // 입력이 C일 때만 높은 옥타브로 재생해 문맥에 맞춰준다(완벽하지 않은 근사치)
+    const guessOctaveUp = (correctIdx===7 && letter==='C');
+    Audio_.ensure(); Audio_.pitch(letter, guessOctaveUp, 400);
+    const correct = NOTE_KEYS[correctIdx]===letter;
+    this.judge(correct, correctIdx);
+  },
+  answer(choiceIdx){
+    const s=this.state; if(s.answered) return;
+    Audio_.ensure(); Audio_.pitch(NOTE_KEYS[choiceIdx], choiceIdx===7, 400);
+    const correctIdx = s.sequence[s.idx];
+    this.judge(choiceIdx===correctIdx, correctIdx);
+  },
+  judge(correct, correctIdx){
+    const s=this.state; s.answered=true;
+    const fb=$('#aFeedback');
+    if(correct){
+      s.score++;
+      fb.innerHTML = `<span class="feedback-good">✅ 정답이에요! "${NOTE_NAMES[correctIdx]}" 였어요.</span>`;
+    } else {
+      const idx = STAFF_IDX[correctIdx];
+      fb.innerHTML = `<span class="feedback-bad">❌ 다시 확인해볼까요? 정답은 "${NOTE_NAMES[correctIdx]}" 였어요.</span>
+        <div style="margin-top:6px;color:var(--ink-soft);font-size:13px;">아래 악보에서 화살표가 가리키는 자리가 "${NOTE_NAMES[correctIdx]}" 예요.</div>`;
+      const g = $('#aNoteG');
+      if(g){ g.innerHTML += `<text x="150" y="${noteY(idx)+4}" font-size="16" fill="#FF6B4A">←${NOTE_NAMES[correctIdx]}</text>`; }
+    }
+    setTimeout(()=>{
+      s.idx++;
+      if(s.idx>=s.total) this.finish(); else this.renderQuestion();
+    }, correct?700:1900);
+  },
+  finish(){
+    const s=this.state;
+    const score = Math.round(s.score/s.total*100);
+    const g = gradeOf(score);
+    if(g.grade==='A') confettiBurst();
+    $('#aResultArea').innerHTML = `
+      <div class="card" style="text-align:center;">
+        <div class="grade-badge" style="color:var(--accent-a);">${g.grade}등급</div>
+        <div style="font-size:20px;font-weight:900;margin:6px 0;">${s.score} / ${s.total}문항 정답 (${score}점)</div>
+        <div>${g.msg}</div>
+        <button class="btn btn-primary-a" style="margin-top:12px;" onclick="FeatureA.start()">다시 도전하기</button>
+      </div>`;
+  }
+};
+
+/* ===================================================================
+   기본 제공 곡 데이터 (업로드된 악보를 분석해 리듬만 반영한 근사치)
+   각 곡 = { title, sig, phrases: [ [ [토큰...], [토큰...], ... ], ... ] }
+=================================================================== */
+const BUILTIN_SONGS = [
+  { title:'아기 염소', sig:'4/4', phrases:[
+      [ ['Q','E','E','E','E','Q'], ['E','E','E','E','E','E','E','E'], ['Q','E','E','Q','Q'], ['Hd','Qr'] ],
+      [ ['Q','E','E','E','E','Q'], ['E','E','E','E','E','E','E','E'], ['Q','E','E','Q!','Q!'], ['Hd','Qr'] ],
+      [ ['Q','E','E','E','E','Q'], ['E','E','E','E','E','E','E','E'], ['Q','E','E','Q','Q'], ['Hd','Qr'] ],
+      [ ['Q','E','E','E','E','Q'], ['E','E','E','E','E','E','E','E'], ['Q','E','E','Q!','Q!'], ['Hd','Qr'] ],
+      [ ['Q','E','E','E','E','Q'], ['E','E','E','E','E','E','E','E'], ['Q','E','E','Q','Q'], ['Hd','Qr'] ],
+      [ ['Q','E','E','E','E','Q'], ['E','E','E','E','E','E','E','E'], ['Q','E','E','Q!','Q!'], ['Hd','Qr'] ]
+  ]},
+  { title:'별 보며 달보며', sig:'6/8', phrases:[
+      [ ['Q','E','E','E','E'], ['Qd','Q','Er'], ['Q','E','E','Q'], ['Qd~','Q','Er'] ],
+      [ ['Q','E','E','E','E'], ['Qd','Q','Er'], ['Q','E','E','Q'], ['Qd~','Q','Er'] ],
+      [ ['Q','E','E','E','E'], ['Q~','E','Qd'],  ['Q','E','E','Q'], ['Qd~','Q','Er'] ],
+      [ ['Q','E','E','E','E'], ['Qd','Q','Er'], ['Q','E','E','Q'], ['Qd~','Q','Er'] ]
+  ]},
+  { title:'손을 잡고', sig:'3/4', phrases:[
+      [ ['Q','E','E','Q'], ['Q','Q','E','E'], ['Q','E','E','Q'], ['H','Qr'] ],
+      [ ['Q','E','E','Q'], ['Q','Q','E','E'], ['Q','E','E','Q'], ['H','Qr'] ],
+      [ ['Q','E','E','Q'], ['Q~','Q','E','E'], ['Q','E','E','Q'], ['H','Qr'] ],
+      [ ['Q','E','E','Q'], ['Q','E','E','Qr'], ['Q','E','E','Qr'], ['H','Qr'] ]
+  ]},
+  { title:'가을길', sig:'4/4', phrases:[
+      [ ['Q','E','E','E','E','Qr'], ['Q','E','E','E','E','Qr'], ['Q','Q','Q','Q'], ['Q','Q','Q','Qr'] ],
+      [ ['Q','E','E','E','E','Qr'], ['Q','E','E','E','E','Qr'], ['Q','Q','Q','Q'], ['Q','Q','Q','Qr'] ]
+  ]},
+  { title:'악기놀이(자진모리)', sig:'12/8', phrases:[
+      [ ['E','E','E','E','E','E','E','E','E','E','E','E'],
+        ['E','E','E','E','E','E','E','E','E','E','E','E'],
+        ['Q','E','E','E','E','Q','E','E','E','E'],
+        ['E','E','E','E','E','E','E','E','E','E','E','E'] ]
+  ]},
+  { title:'다섯 글자 예쁜말', sig:'4/4', phrases:[
+      [ ['Qr','H','Q'], ['Q','Q','Q','Q'], ['Q','Q','H'], ['H','H'] ]
+  ]}
+];
+const BASE_PATTERN_POOL = {
+  '2/4':[ ['Q','Q'], ['E','E','Q'], ['Q','E','E'], ['E','E','E','E'], ['Qr','Q'] ],
+  '3/4':[ ['Q','Q','Q'], ['Q','E','E','Q'], ['E','E','E','E','E','E'], ['Q','Q','E','E'], ['H','Qr'] ],
+  '4/4':[ ['Q','Q','Q','Q'], ['Q','E','E','Q','Q'], ['E','E','E','E','Q','Q'], ['H','Q','Q'], ['Q','E','E','H'], ['Hd','Qr'] ],
+  '6/8':[ ['E','E','E','E','E','E'], ['Qd','Qd'], ['Q','E','E','E','E'], ['Qd','Q','Er'], ['Q','E','E','Q'] ],
+  '12/8':[ ['E','E','E','E','E','E','E','E','E','E','E','E'], ['Qd','Qd','Qd','Qd'],
+           ['Q','E','E','E','E','Q','E','E','E','E'] ]
+};
+function allSongs(){ return BUILTIN_SONGS.concat(Store.get(Store.KEYS.CUSTOM_SONGS, [])); }
+function flattenSongMeasures(song){ return song.phrases.reduce((acc,p)=>acc.concat(p), []); }
+function basePatternsFor(sig){
+  const custom = Store.get(Store.KEYS.CUSTOM_BASEPATTERNS, {});
+  return (BASE_PATTERN_POOL[sig]||[]).concat(custom[sig]||[]);
+}
+// stop 시 확실히 소리를 끊기 위해 오디오 컨텍스트를 통째로 suspend
+Audio_.stopAll = function(){ if(this.ctx){ try{ this.ctx.suspend(); }catch(e){} } };
+
+/* ===================================================================
+   기능 B: 1~4마디 리듬 치기 게임
+=================================================================== */
+const FeatureB = {
+  state:{
+    sig:'4/4', mode:'song', songIdx:0, phraseIdx:0, measureCount:1,
+    bpm:90, metronomeOn:true, playing:false, playKind:null,
+    measuresTokens:[], events:[], totalE:0, judgeSegs:[], results:[],
+    timeouts:[], rafId:null, playStartPerf:0, totalMs:0, mainStarted:false,
+    sessionActive:false, level:1, streak:0, totalCorrect:0, roundScores:[]
+  },
+  init(){
+    const panel = $('#tab-b');
+    panel.innerHTML = `
+      <h2 class="panel-title" style="color:var(--accent-b);">🥁 B. 리듬 치기 게임</h2>
+      <p class="panel-desc">리듬을 듣고 스페이스바(또는 화면 버튼)로 똑같이 쳐보세요! 1단계(1마디)부터 시작해서, 한 단계에서 3문제 연속 정답이거나 누적 7문제를 맞히면 다음 단계로 올라가요. 4단계까지 클리어하면 게임 완료!</p>
+      <div class="card row">
+        <div><label class="field-label">박자</label>
+          <select id="bSig">${Object.keys(TIME_SIGS).map(s=>`<option value="${s}">${s}</option>`).join('')}</select>
+        </div>
+        <div><label class="field-label">출제 모드</label>
+          <select id="bMode"><option value="song">곡 선택 모드</option><option value="base">기본 패턴 모드</option></select>
+        </div>
+        <div id="bSongWrap"><label class="field-label">곡 선택</label><select id="bSong"></select></div>
+        <div id="bPhraseWrap" class="row" style="gap:4px;">
+          <button class="btn" onclick="FeatureB.prevPhrase()">◀</button>
+          <span id="bPhraseLabel" style="font-size:12px;color:var(--ink-soft);"></span>
+          <button class="btn" onclick="FeatureB.nextPhrase()">▶</button>
+        </div>
+        <button class="btn btn-primary-b" id="bNewBtn" onclick="FeatureB.newExercise()">🔄 새 리듬 만들기(연습용)</button>
+      </div>
+
+      <div class="card" id="bLevelCard" style="display:none;">
+        <div style="font-weight:900;font-size:16px;">🏁 현재 단계: <span id="bLevelNum">1</span>단계 (<span id="bLevelMeasures">1</span>마디씩)</div>
+        <div style="font-size:13px;color:var(--ink-soft);">연속 정답 <span id="bStreak">0</span>/3 · 이번 단계 누적 정답 <span id="bTotalCorrect">0</span>/7</div>
+      </div>
+
+      <div class="card row">
+        <div><label class="field-label">템포(BPM)</label>
+          <input type="range" id="bBpm" min="60" max="160" value="90">
+          <span id="bBpmVal">90</span>
+        </div>
+        <div><label class="field-label">메트로놈</label>
+          <button class="btn" id="bMetroToggle" onclick="FeatureB.toggleMetro()">🔔 ON</button>
+        </div>
+        <div><label class="field-label">드럼 소리 선택</label>
+          <div class="row" style="gap:4px;">
+            <button class="btn drum-btn" data-d="wood" onclick="FeatureB.setDrum('wood')">우드블록</button>
+            <button class="btn drum-btn" data-d="snare" onclick="FeatureB.setDrum('snare')">스네어</button>
+            <button class="btn drum-btn" data-d="tom" onclick="FeatureB.setDrum('tom')">탐탐(북)</button>
+            <button class="btn" onclick="Audio_.drum(currentDrumSound())">🔊 미리듣기</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div id="bCountdown" style="display:none;font-size:64px;font-weight:900;text-align:center;color:var(--accent-b);"></div>
+        <div id="bSvgWrap" class="svg-wrap"></div>
+        <div class="row" style="margin-top:10px;">
+          <button class="btn btn-primary-c" id="bPreviewBtn" onclick="FeatureB.preview()">🎧 리듬 미리듣기</button>
+          <button class="btn btn-primary-b" id="bStartBtn" onclick="FeatureB.beginSession()">▶️ 게임 시작(1단계부터)</button>
+          <button class="btn btn-bad" id="bStopBtn" onclick="FeatureB.stop()" disabled>⏹ 정지</button>
+          <button class="btn" style="background:var(--accent-b);color:#fff;font-size:20px;padding:12px 26px;touch-action:manipulation;" id="bTapBtn">👏 탁!</button>
+        </div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">PC에서는 스페이스바로도 입력할 수 있어요. 정지를 누르면 게임이 그 자리에서 끝나요.</div>
+      </div>
+      <div id="bResultArea"></div>
+      <div class="row">
+        <button class="btn" onclick="Rank.openModal()">🏆 랭킹 보기</button>
+      </div>
+    `;
+    const songSel = $('#bSong');
+    allSongs().forEach((s,i)=>songSel.appendChild(el('option',{value:i,html:`${s.title} (${s.sig})`})));
+    $('#bSig').onchange=e=>{ this.state.sig=e.target.value; this.newExercise(); };
+    $('#bMode').onchange=e=>{ this.state.mode=e.target.value; this.syncModeUI(); this.newExercise(); };
+    $('#bSong').onchange=e=>{ this.state.songIdx=parseInt(e.target.value); this.state.phraseIdx=0;
+      this.state.sig = allSongs()[this.state.songIdx].sig; $('#bSig').value=this.state.sig; this.newExercise(); };
+    $('#bBpm').oninput=e=>{ this.state.bpm=parseInt(e.target.value); $('#bBpmVal').textContent=e.target.value; };
+    document.addEventListener('keydown', (e)=>{
+      if(e.code==='Space' && $('#tab-b').classList.contains('active')){ e.preventDefault(); this.onTap(); }
+    });
+    // "탁!" 버튼: click/mousedown 대신 pointerdown을 사용해 지연 없이 즉시 반응하게 한다.
+    // (터치 기기에서 mousedown/click은 브라우저가 더블탭 확대 여부를 판단하느라
+    //  최대 ~300ms 지연될 수 있고, click은 press+release가 끝나야 발생해 한 박자 늦다)
+    const tapBtn = $('#bTapBtn');
+    const tapHandler = (e)=>{ e.preventDefault(); this.onTap(); };
+    if(window.PointerEvent){ tapBtn.addEventListener('pointerdown', tapHandler); }
+    else { tapBtn.addEventListener('mousedown', tapHandler); tapBtn.addEventListener('touchstart', tapHandler, {passive:false}); }
+    this.setDrum(currentDrumSound());
+    this.syncModeUI();
+    this.newExercise();
+  },
+  syncModeUI(){
+    const song = this.state.mode==='song';
+    $('#bSongWrap').style.display = song?'block':'none';
+    $('#bPhraseWrap').style.display = song?'flex':'none';
+    $('#bMode').value=this.state.mode;
+    // 곡 선택 모드에서는 박자가 곡에 맞춰 자동으로 정해지므로 직접 바꿀 수 없게 잠근다
+    $('#bSig').disabled = song || this.state.sessionActive;
+  },
+  setDrum(type){
+    setDrumSound(type);
+    $all('.drum-btn').forEach(b=>b.classList.toggle('selected', b.dataset.d===type));
+  },
+  toggleMetro(){
+    this.state.metronomeOn = !this.state.metronomeOn;
+    $('#bMetroToggle').textContent = this.state.metronomeOn? '🔔 ON':'🔕 OFF';
+  },
+  prevPhrase(){ const song=allSongs()[this.state.songIdx]; this.state.phraseIdx=(this.state.phraseIdx-1+song.phrases.length)%song.phrases.length; this.newExercise(); },
+  nextPhrase(){ const song=allSongs()[this.state.songIdx]; this.state.phraseIdx=(this.state.phraseIdx+1)%song.phrases.length; this.newExercise(); },
+  // 연습용(단계 시스템과 무관): 설정한 마디 수 없이, 곡 모드는 현재 소절, 기본 모드는 1마디로 가볍게 미리보기
+  newExercise(){
+    const s=this.state;
+    if(s.sessionActive) return;
+    if(s.mode==='song'){
+      const song = allSongs()[s.songIdx];
+      s.sig = song.sig; $('#bSig').value=s.sig;
+      s.measuresTokens = song.phrases[s.phraseIdx % song.phrases.length];
+      $('#bPhraseLabel').textContent = `${s.phraseIdx+1} / ${song.phrases.length} 소절`;
+    } else {
+      const pool = basePatternsFor(s.sig);
+      s.measuresTokens = [ pool[Math.floor(Math.random()*pool.length)] ];
+    }
+    this._renderExercise();
+  },
+  _renderExercise(){
+    const s=this.state;
+    const {svg, events, totalE} = renderRhythmSVG(s.measuresTokens);
+    $('#bSvgWrap').innerHTML = svg;
+    s.events = events; s.totalE = totalE;
+    s.judgeSegs = buildJudgeSegments(events);
+    s.results = [];
+    s._lastHlIdx = -1;
+    $('#bResultArea').innerHTML='';
+  },
+  /* ===== 단계(레벨) 진행 시스템 ===== */
+  _setConfigDisabled(disabled){
+    ['#bMode','#bSong','#bNewBtn','#bPreviewBtn'].forEach(sel=>{ const e=$(sel); if(e) e.disabled=disabled; });
+    $('#bStartBtn').disabled = disabled;
+    this.syncModeUI();
+  },
+  updateLevelUI(){
+    $('#bLevelNum').textContent=this.state.level;
+    $('#bLevelMeasures').textContent=this.state.level;
+    $('#bStreak').textContent=this.state.streak;
+    $('#bTotalCorrect').textContent=this.state.totalCorrect;
+  },
+  beginSession(){
+    if(this.state.sessionActive || this.state.playing) return;
+    const s=this.state;
+    s.sessionActive=true; s.level=1; s.streak=0; s.totalCorrect=0; s.roundScores=[];
+    $('#bLevelCard').style.display='block';
+    this._setConfigDisabled(true);
+    this.updateLevelUI();
+    this.newExerciseForLevel();
+    this._play('game');
+  },
+  newExerciseForLevel(){
+    const s=this.state;
+    const n = s.level;
+    if(s.mode==='song'){
+      const song = allSongs()[s.songIdx];
+      s.sig = song.sig; $('#bSig').value=s.sig;
+      const flat = flattenSongMeasures(song);
+      if(flat.length<=n){
+        const arr=[]; for(let i=0;i<n;i++){ arr.push(flat[i % flat.length]); }
+        s.measuresTokens = arr;
+      } else {
+        const maxStart = flat.length-n;
+        const start = Math.floor(Math.random()*(maxStart+1));
+        s.measuresTokens = flat.slice(start, start+n);
+      }
+    } else {
+      const pool = basePatternsFor(s.sig);
+      const arr=[]; for(let i=0;i<n;i++){ arr.push(pool[Math.floor(Math.random()*pool.length)]); }
+      s.measuresTokens = arr;
+    }
+    this._renderExercise();
+  },
+  preview(){
+    if(this.state.playing || this.state.sessionActive) return;
+    this._play('preview');
+  },
+  _play(kind){
+    const s=this.state;
+    Audio_.ensure();
+    s.playKind=kind; s.mainStarted=false;
+    s.timeouts=[];
+    $('#bStartBtn').disabled=true; $('#bStopBtn').disabled=false;
+    if(kind==='game'){
+      // 게임 시작 시 4박자 예비박(카운트다운 4-3-2-1)을 먼저 준다
+      this._countIn(()=>this._startMain(kind));
+    } else {
+      this._startMain(kind);
+    }
+  },
+  _countIn(done){
+    const s=this.state;
+    const beatMs = 60000/s.bpm;
+    for(let i=0;i<4;i++){
+      const num = 4-i;
+      s.timeouts.push(setTimeout(()=>{
+        this._showCountdown(num);
+        Audio_.metronomeClick(num===4);
+      }, i*beatMs));
+    }
+    s.timeouts.push(setTimeout(()=>{ this._hideCountdown(); done(); }, 4*beatMs));
+  },
+  _showCountdown(n){ const c=$('#bCountdown'); if(c){ c.style.display='block'; c.textContent=n; } },
+  _hideCountdown(){ const c=$('#bCountdown'); if(c) c.style.display='none'; },
+  _startMain(kind){
+    const s=this.state;
+    const eighthMs = eighthMsFor(s.sig, s.bpm);
+    const totalMs = s.totalE*eighthMs;
+    s.playing=true; s.mainStarted=true; s.totalMs=totalMs; s.playStartPerf=performance.now();
+    if(kind==='preview'){
+      s.events.filter(e=>!e.isRest).forEach(ev=>{
+        s.timeouts.push(setTimeout(()=>Audio_.drum(currentDrumSound()), ev.onsetE*eighthMs));
+      });
+    }
+    if(s.metronomeOn){
+      const groupSize = BEAT_GROUPS[s.sig][0];
+      const groupsPerMeasure = BEAT_GROUPS[s.sig].length;
+      const groupMs = eighthMs*groupSize;
+      const totalGroups = Math.round(s.totalE/groupSize);
+      for(let g=0; g<totalGroups; g++){
+        s.timeouts.push(setTimeout(()=>Audio_.metronomeClick(g%groupsPerMeasure===0), g*groupMs));
+      }
+    }
+    s.timeouts.push(setTimeout(()=>this._finishPlay(), totalMs+80));
+    this._raf();
+  },
+  _raf(){
+    const s=this.state;
+    if(!s.playing) return;
+    const elapsed = performance.now()-s.playStartPerf;
+    const eighthMs = eighthMsFor(s.sig, s.bpm);
+    const elapsedE = Math.min(s.totalE, elapsed/eighthMs);
+    const svgEl = $('#bSvgWrap svg');
+    if(svgEl){
+      // 재생 커서 위치는 렌더러와 동일한 좌표 규칙(pixelXForElapsedE)으로 계산해야
+      // 마디 사이 간격(MEASURE_GAP) 때문에 음표 그림과 커서가 어긋나지 않는다
+      const px = pixelXForElapsedE(s.measuresTokens, elapsedE);
+      let line = $('#bPlayhead');
+      if(!line){ line = document.createElementNS('http://www.w3.org/2000/svg','line');
+        line.setAttribute('id','bPlayhead'); line.setAttribute('y1','16'); line.setAttribute('y2','96');
+        line.setAttribute('stroke', '#FF6B4A'); line.setAttribute('stroke-width','3'); svgEl.appendChild(line); }
+      line.setAttribute('x1', px); line.setAttribute('x2', px);
+      // 매 프레임 모든 음표를 순회하며 classList.toggle을 호출하던 방식은
+      // 마디가 많아질수록 프레임마다 불필요한 DOM 작업이 쌓여 입력 반응이 둔해질 수 있다.
+      // 그래서 "현재 활성 음표 인덱스"만 계산해 값이 바뀔 때만 DOM을 건드리도록 최적화했다.
+      let activeIdx=-1;
+      for(let i=0;i<s.events.length;i++){
+        const ev=s.events[i];
+        const onsetMs=ev.onsetE*eighthMs, endMs=(ev.onsetE+ev.durE)*eighthMs;
+        if(elapsed>=onsetMs && elapsed<endMs){ activeIdx=i; break; }
+      }
+      if(activeIdx!==s._lastHlIdx){
+        if(s._lastHlIdx>=0){
+          const prev = svgEl.querySelector(`.note-el[data-idx="${s._lastHlIdx}"]`);
+          if(prev) prev.classList.remove('hl');
+        }
+        if(activeIdx>=0){
+          const cur = svgEl.querySelector(`.note-el[data-idx="${activeIdx}"]`);
+          if(cur) cur.classList.add('hl');
+        }
+        s._lastHlIdx = activeIdx;
+      }
+    }
+    if(elapsed<s.totalMs+80){ s.rafId = requestAnimationFrame(()=>this._raf()); }
+  },
+  onTap(){
+    const s=this.state;
+    Audio_.drum(currentDrumSound());
+    if(!s.playing || s.playKind!=='game') return;
+    const eighthMs = eighthMsFor(s.sig, s.bpm);
+    const t = performance.now()-s.playStartPerf;
+    let nearest=null, nearestDist=Infinity;
+    s.judgeSegs.forEach((seg,i)=>{
+      if(s.results[i]) return; // 이미 판정됨
+      const onsetMs=seg.onsetE*eighthMs;
+      const dist=Math.abs(t-onsetMs);
+      if(dist<nearestDist){ nearestDist=dist; nearest={seg,i,onsetMs}; }
+    });
+    if(!nearest) return;
+    const tol = getSettings();
+    let label;
+    if(nearest.seg.isRest){
+      label='빗나감(쉼표)'; s.results[nearest.i]='wrong';
+    } else {
+      const diff = t-nearest.onsetMs;
+      if(Math.abs(diff)<=tol.tolerancePerfect){ label='완벽!'; s.results[nearest.i]='perfect'; }
+      else if(Math.abs(diff)<=tol.toleranceGood){ label='굿'; s.results[nearest.i]='good'; }
+      else if(diff>0){ label='조금 느려요'; s.results[nearest.i]='late'; }
+      else { label='조금 빨라요'; s.results[nearest.i]='early'; }
+    }
+    this._flashTapLabel(label, s.results[nearest.i]);
+  },
+  _flashTapLabel(text, resultType){
+    let box = $('#bTapFlash');
+    if(!box){
+      box = el('div',{id:'bTapFlash', style:'position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);font-size:28px;font-weight:900;z-index:150;pointer-events:none;'});
+      document.body.appendChild(box);
+    }
+    const color = (resultType==='perfect')?'#22C55E':(resultType==='good')?'#2D9CDB':(resultType==='wrong')?'#EF4444':'#F59E0B';
+    box.style.color=color; box.textContent=text; box.style.opacity='1';
+    box.animate([{opacity:1, transform:'translate(-50%,-50%) scale(1.15)'},{opacity:0, transform:'translate(-50%,-70%) scale(1)'}],{duration:500});
+    clearTimeout(this._flashTimer);
+    this._flashTimer=setTimeout(()=>{ box.style.opacity='0'; }, 480);
+  },
+  _finishPlay(){
+    // 재생이 끝까지(정지 버튼 없이) 자연 종료된 경우
+    const s=this.state;
+    const wasGame = s.playKind==='game';
+    s.playing=false; s.playKind=null; s.mainStarted=false;
+    cancelAnimationFrame(s.rafId);
+    $('#bStopBtn').disabled=true;
+    if(!s.sessionActive) $('#bStartBtn').disabled=false;
+    const line=$('#bPlayhead'); if(line) line.remove();
+    if(wasGame) this._handleRoundResult(false);
+  },
+  stop(){
+    const s=this.state;
+    s.timeouts.forEach(t=>clearTimeout(t));
+    s.timeouts=[];
+    cancelAnimationFrame(s.rafId);
+    Audio_.stopAll();
+    this._hideCountdown();
+    const wasGame = s.playKind==='game';
+    const started = s.mainStarted;
+    s.playing=false; s.playKind=null; s.mainStarted=false;
+    $('#bStopBtn').disabled=true;
+    if(!s.sessionActive) $('#bStartBtn').disabled=false;
+    const line=$('#bPlayhead'); if(line) line.remove();
+    if(wasGame){
+      if(started){ this._handleRoundResult(true); } // 재생 중 정지 = 그만하기
+      else if(s.sessionActive){ this._finishSession(true); } // 예비박(카운트다운) 중 정지
+    }
+  },
+  _computeScore(){
+    const s=this.state;
+    let total=0, perfect=0, good=0, late=0, early=0, miss=0, restWrong=0;
+    s.judgeSegs.forEach((seg,i)=>{
+      if(seg.isRest){ if(s.results[i]==='wrong') restWrong++; return; }
+      total++;
+      const r = s.results[i];
+      if(r==='perfect') perfect++;
+      else if(r==='good') good++;
+      else if(r==='late') late++;
+      else if(r==='early') early++;
+      else miss++;
+    });
+    const correct = perfect+good;
+    const score = total? Math.round(correct/total*100):0;
+    return { score, stats:{total,perfect,good,late,early,miss,restWrong} };
+  },
+  // 한 라운드(한 문제)가 끝났을 때: 세션 진행 중이면 통과 여부 판정 → 단계 진행/승급 처리
+  _handleRoundResult(abandoned){
+    const s=this.state;
+    const { score, stats } = this._computeScore();
+    if(!s.sessionActive){ return; } // 방어적 처리 (현재 흐름상 세션 없이 game이 도는 경우는 없음)
+    s.roundScores.push(score);
+    if(abandoned){
+      this._renderRoundCard(score, stats, null);
+      this._finishSession(true);
+      return;
+    }
+    const passThreshold = getSettings().gradeThresholds.B; // 기본 70점 이상이면 이 문제 "통과"
+    const passed = score>=passThreshold;
+    if(passed){ s.streak++; s.totalCorrect++; } else { s.streak=0; }
+    this.updateLevelUI();
+    this._renderRoundCard(score, stats, passed);
+    if(s.streak>=3 || s.totalCorrect>=7){
+      if(s.level>=4){ this._finishSession(false); return; }
+      s.level++; s.streak=0; s.totalCorrect=0;
+      setTimeout(()=>{ this.updateLevelUI(); this.newExerciseForLevel(); this._play('game'); }, 1700);
+    } else {
+      setTimeout(()=>{ this.newExerciseForLevel(); this._play('game'); }, 1700);
+    }
+  },
+  _renderRoundCard(score, stats, passed){
+    const g = gradeOf(score);
+    const passLabel = passed===null ? '<span class="feedback-bad">⏹ 게임을 그만뒀어요.</span>'
+      : (passed? '<span class="feedback-good">✅ 이번 문제 통과! 다음 문제로 넘어가요...</span>'
+                : '<span class="feedback-bad">❌ 아쉬워요, 같은 단계에서 다시 도전!</span>');
+    $('#bResultArea').innerHTML = `
+      <div class="card" style="text-align:center;">
+        <div style="font-size:18px;font-weight:900;">${score}점 · ${g.grade}등급</div>
+        <div style="font-size:13px;color:var(--ink-soft);margin-top:6px;">
+          총 박자 ${stats.total} · 완벽 ${stats.perfect} · 굿 ${stats.good} · 느림 ${stats.late} · 빠름 ${stats.early} · 놓침 ${stats.miss} · 쉼표오답 ${stats.restWrong}
+        </div>
+        <div style="margin-top:8px;">${passLabel}</div>
+      </div>`;
+  },
+  // 세션(단계 진행) 전체가 끝났을 때(4단계 클리어 또는 중도 정지): 최종 결과 + 랭킹 기록
+  _finishSession(abandoned){
+    const s=this.state;
+    s.sessionActive=false;
+    this._setConfigDisabled(false);
+    $('#bLevelCard').style.display='none';
+    const avg = s.roundScores.length? Math.round(s.roundScores.reduce((a,b)=>a+b,0)/s.roundScores.length) : 0;
+    const g = gradeOf(avg);
+    if(!abandoned && s.level>=4 && (s.streak>=3||s.totalCorrect>=7)) confettiBurst();
+    const levelReached = s.level;
+    $('#bResultArea').innerHTML += `
+      <div class="card" style="text-align:center;">
+        <div class="grade-badge" style="color:var(--accent-b);">${g.grade}등급</div>
+        <div style="font-size:20px;font-weight:900;">${abandoned? '중단됨 · ':'🎉 모두 완료! · '}최고 ${levelReached}단계까지 도달 (평균 ${avg}점)</div>
+        <div>${g.msg}</div>
+      </div>`;
+    if(s.roundScores.length){
+      const nick = Nickname.get();
+      const content = (s.mode==='song' ? allSongs()[s.songIdx].title : `기본 패턴(${s.sig})`) + ` [최고 ${levelReached}단계]`;
+      Rank.addEntry({ nickname: nick||'익명', score:avg, grade:g.grade, content, sig:s.sig, ts:Date.now() });
+    }
+  }
+};
+
+/* ===================================================================
+   닉네임 로그인 (실제 계정 인증이 아님, 랭킹 표시용 이름 지정용)
+=================================================================== */
+const Nickname = {
+  get(){ return Store.get(Store.KEYS.NICKNAME, null); },
+  refreshBadge(){
+    const nick = this.get();
+    $('#nicknameBadge').textContent = nick? `👤 ${nick}` : '👤 로그인';
+  },
+  openModal(){
+    $('#nicknameInput').value = this.get()||'';
+    $('#nicknameError').textContent='';
+    $('#nicknameModal').classList.add('show');
+  },
+  closeModal(){ $('#nicknameModal').classList.remove('show'); },
+  submit(){
+    const v = $('#nicknameInput').value.trim();
+    if(v.length<2 || v.length>10 || !/^[가-힣a-zA-Z0-9]+$/.test(v)){
+      $('#nicknameError').textContent='2~10자, 한글/영문/숫자만 사용해주세요.';
+      return;
+    }
+    // 아주 단순한 금칙어 필터 (완벽하지 않음, 최소한의 안전장치)
+    const banned=['바보','시발','씨발','병신'];
+    if(banned.some(b=>v.includes(b))){
+      $('#nicknameError').textContent='다른 닉네임을 입력해주세요.';
+      return;
+    }
+    Store.set(Store.KEYS.NICKNAME, v);
+    this.refreshBadge();
+    this.closeModal();
+  }
+};
+
+/* ===================================================================
+   랭킹 (닉네임별 리듬 치기 게임 기록, TOP 30 표시 / 최대 100건 보관)
+=================================================================== */
+const Rank = {
+  addEntry(entry){
+    try{
+      let list = Store.get(Store.KEYS.LEADERBOARD, []);
+      list.push(entry);
+      list.sort((a,b)=>b.score-a.score);
+      list = list.slice(0,100);
+      Store.set(Store.KEYS.LEADERBOARD, list);
+    }catch(e){ console.error('랭킹 기록 실패', e); }
+  },
+  openModal(){
+    this.render('all');
+    $('#rankModal').classList.add('show');
+  },
+  closeModal(){ $('#rankModal').classList.remove('show'); },
+  render(filter){
+    let list = Store.get(Store.KEYS.LEADERBOARD, []);
+    if(filter && filter!=='all'){ list = list.filter(e=>e.content===filter); }
+    list = list.slice(0,30);
+    const myNick = Nickname.get();
+    const contents = Array.from(new Set(Store.get(Store.KEYS.LEADERBOARD, []).map(e=>e.content)));
+    const options = ['<option value="all">전체</option>'].concat(contents.map(c=>`<option value="${c}">${c}</option>`)).join('');
+    $('#rankBody').innerHTML = `
+      <div class="row" style="margin-bottom:8px;">
+        <select id="rankFilter" onchange="Rank.render(this.value)">${options}</select>
+      </div>
+      <table class="rank-table"><thead><tr><th>순위</th><th>닉네임</th><th>점수</th><th>등급</th><th>콘텐츠</th><th>날짜</th></tr></thead>
+      <tbody>${list.map((e,i)=>`<tr class="${e.nickname===myNick?'me':''}"><td>${i+1}</td><td>${e.nickname}</td><td>${e.score}</td><td>${e.grade}</td><td>${e.content}</td><td>${fmtDate(e.ts)}</td></tr>`).join('') || '<tr><td colspan="6">아직 기록이 없어요.</td></tr>'}</tbody></table>
+    `;
+    if(filter) $('#rankFilter') && ($('#rankFilter').value=filter);
+  }
+};
+
+/* ===================================================================
+   기능 C: 악보 이미지 업로드 → 리듬 악보 자동 생성 및 다운로드
+   -----------------------------------------------------------------
+   이 파일은 단일 HTML로 배포되므로, Anthropic API를 브라우저에서
+   직접 호출하려면 사용자 본인의 API 키가 필요하다. 키는 메모리(세션)
+   에만 두고 저장하지 않는다. CORS 문제로 호출이 실패할 수 있으며,
+   이 경우 아래 "직접 리듬 입력" 칸으로 수동 입력해 대체할 수 있다.
+=================================================================== */
+const FeatureC = {
+  state:{ apiKey:'', imgBase64:'', imgMime:'', sig:'4/4', measuresTokens:[], events:[], totalE:0 },
+  init(){
+    const panel = $('#tab-c');
+    panel.innerHTML = `
+      <h2 class="panel-title" style="color:var(--accent-c);">🖼️ C. 악보 업로드 → 리듬 악보 생성</h2>
+      <p class="panel-desc">악보 이미지를 올리면 음높이는 빼고 리듬(음가)만 뽑아 리듬 전용 악보로 만들어줘요. 자동 인식 결과는 참고용이니 확인 후 필요한 부분을 고쳐주세요.</p>
+      <div class="card">
+        <label class="field-label">1) 악보 이미지 업로드</label>
+        <input type="file" id="cFileInput" accept="image/*">
+        <div id="cImgPreview" style="margin-top:10px;"></div>
+      </div>
+      <div class="card">
+        <label class="field-label">2) Anthropic API 키 (이 세션 동안만 메모리에 보관, 저장되지 않음)</label>
+        <input type="password" id="cApiKey" placeholder="sk-ant-...", style="width:100%;max-width:420px;">
+        <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">브라우저에서 직접 API를 호출하는 방식이라 키가 네트워크 요청에 노출됩니다. 개인 학습/테스트 용도로만 사용하세요.</div>
+        <div class="row" style="margin-top:8px;">
+          <select id="cSigGuess">${Object.keys(TIME_SIGS).map(s=>`<option value="${s}">${s}</option>`).join('')}</select>
+          <button class="btn btn-primary-c" onclick="FeatureC.recognize()">🔍 인식하기</button>
+        </div>
+        <div id="cStatus" style="font-size:13px;margin-top:6px;"></div>
+      </div>
+      <div class="card">
+        <label class="field-label">3) 인식 결과 확인/수정 (음표를 클릭하면 다른 음가로 바뀌어요)</label>
+        <div style="font-size:12px;color:var(--ink-soft);">자동 인식이 안 되거나 API 키가 없다면, 아래 칸에 직접 마디를 입력해보세요. 한 줄 = 한 마디, 콤마로 구분 (예: Q,E,E,Q)</div>
+        <textarea id="cManualInput" placeholder="Q,E,E,Q&#10;Hd,Qr"></textarea>
+        <button class="btn" onclick="FeatureC.applyManual()">이 리듬으로 적용</button>
+        <div id="cSvgWrap" class="svg-wrap" style="margin-top:10px;"></div>
+      </div>
+      <div class="card row">
+        <button class="btn btn-primary-c" onclick="FeatureC.preview()">▶️ 재생</button>
+        <button class="btn btn-bad" onclick="FeatureC.stopPlay()">⏹ 정지</button>
+        <button class="btn btn-primary-b" onclick="FeatureC.download()">⬇️ 리듬 악보 다운로드(PNG)</button>
+        <button class="btn" onclick="FeatureC.saveToGame()">🎮 리듬 치기 게임에 저장</button>
+      </div>
+    `;
+    $('#cFileInput').onchange = e=>this.onFile(e);
+    $('#cApiKey').oninput = e=>this.state.apiKey=e.target.value;
+  },
+  onFile(e){
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      const dataUrl = reader.result;
+      this.state.imgMime = file.type;
+      this.state.imgBase64 = dataUrl.split(',')[1];
+      $('#cImgPreview').innerHTML = `<img src="${dataUrl}" style="max-width:280px;border-radius:10px;box-shadow:var(--shadow);">`;
+    };
+    reader.readAsDataURL(file);
+  },
+  async recognize(){
+    const s=this.state;
+    if(!s.imgBase64){ $('#cStatus').innerHTML='<span class="feedback-bad">먼저 이미지를 올려주세요.</span>'; return; }
+    if(!s.apiKey){ $('#cStatus').innerHTML='<span class="feedback-bad">API 키를 입력해주세요. (또는 아래 직접 입력 칸을 사용하세요)</span>'; return; }
+    $('#cStatus').textContent='인식 중...';
+    const sigKey = $('#cSigGuess').value;
+    const total = TIME_SIGS[sigKey];
+    const prompt = `이 악보 이미지에서 음높이는 무시하고, 마디별 리듬(음가)만 추출해줘.
+사용 가능한 토큰: W(온음표,8) Hd(점2분,6) H(2분,4) Qd(점4분,3) Q(4분,2) Ed(점8분,1.5) E(8분,1) S(16분,0.5), 쉼표는 뒤에 r을 붙임(예:Qr,Er), 붙임줄은 뒤에 ~ (예:Qd~), 악센트는 뒤에 !(예:Q!).
+이 곡은 ${sigKey}박자이고 한 마디의 토큰 합은 ${total}이어야 해.
+아래 JSON 형식으로만 응답해. 다른 설명이나 코드펜스 없이 JSON만 출력해:
+{"measures": [["Q","E","E","Q"], ["Hd","Qr"]]}`;
+    try{
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json',
+          'x-api-key': s.apiKey,
+          'anthropic-version':'2023-06-01',
+          'anthropic-dangerous-direct-browser-access':'true'
+        },
+        body: JSON.stringify({
+          model:'claude-sonnet-4-6', max_tokens:1024,
+          messages:[{ role:'user', content:[
+            { type:'image', source:{ type:'base64', media_type: s.imgMime||'image/png', data:s.imgBase64 } },
+            { type:'text', text: prompt }
+          ]}]
+        })
+      });
+      const data = await resp.json();
+      if(data.error){ throw new Error(data.error.message||'API 오류'); }
+      const textBlock = (data.content||[]).find(c=>c.type==='text');
+      if(!textBlock) throw new Error('응답에서 텍스트를 찾지 못했어요.');
+      const cleaned = textBlock.text.replace(/```json|```/g,'').trim();
+      const parsed = JSON.parse(cleaned);
+      s.sig = sigKey;
+      s.measuresTokens = parsed.measures;
+      const errs = validateMeasures(s.measuresTokens, s.sig);
+      this.renderCurrent();
+      $('#cStatus').innerHTML = errs.length
+        ? `<span class="feedback-bad">인식은 됐지만 박자가 안 맞는 마디가 있어요: ${errs.join(' / ')}</span>`
+        : `<span class="feedback-good">✅ 인식 완료! 아래에서 확인해보세요.</span>`;
+    }catch(err){
+      console.error(err);
+      $('#cStatus').innerHTML = `<span class="feedback-bad">인식에 실패했어요 (${err.message}). 아래 직접 입력 칸을 사용해주세요.</span>`;
+    }
+  },
+  applyManual(){
+    const sigKey = $('#cSigGuess').value;
+    const lines = $('#cManualInput').value.split('\n').map(l=>l.trim()).filter(Boolean);
+    const measures = lines.map(l=>l.split(',').map(t=>t.trim()).filter(Boolean));
+    const errs = validateMeasures(measures, sigKey);
+    if(errs.length){ $('#cStatus').innerHTML = `<span class="feedback-bad">${errs.join(' / ')}</span>`; return; }
+    this.state.sig=sigKey; this.state.measuresTokens=measures;
+    this.renderCurrent();
+    $('#cStatus').innerHTML = `<span class="feedback-good">✅ 적용했어요.</span>`;
+  },
+  renderCurrent(){
+    const {svg, events, totalE} = renderRhythmSVG(this.state.measuresTokens);
+    this.state.events=events; this.state.totalE=totalE;
+    const wrap = $('#cSvgWrap');
+    wrap.innerHTML = svg;
+    $all('.note-el', wrap).forEach(g=>{
+      g.classList.add('hit');
+      g.onclick = ()=>this.cycleNote(parseInt(g.dataset.idx));
+    });
+  },
+  cycleNote(idx){
+    // 간단한 교정 UI: 클릭할 때마다 흔히 쓰는 음가를 순환하며 바꿔준다
+    const noteOrder=['E','Q','Ed','Qd','H','Hd','W'];
+    const restOrder=['Er','Qr'];
+    const ev = this.state.events[idx];
+    // measuresTokens에서 해당 위치 찾기
+    const tok = this.state.measuresTokens[ev.measureIdx][ev.idxInMeasure];
+    const parsed = parseToken(tok);
+    let nextTok;
+    if(parsed.isRest){
+      const cur = tok.replace(/[!~]/g,''); const i=restOrder.indexOf(cur);
+      nextTok = restOrder[(i+1)%restOrder.length];
+    } else {
+      const baseNoTie = tok.replace(/[!~]/g,'');
+      const i = noteOrder.indexOf(baseNoTie);
+      nextTok = noteOrder[(i+1)%noteOrder.length] + (parsed.accent?'!':'');
+    }
+    this.state.measuresTokens[ev.measureIdx][ev.idxInMeasure]=nextTok;
+    this.renderCurrent();
+  },
+  preview(){
+    Audio_.ensure();
+    const eighthMs = eighthMsFor(this.state.sig, 100);
+    this.state.events.filter(e=>!e.isRest).forEach(ev=>{
+      const id=setTimeout(()=>Audio_.drum(currentDrumSound()), ev.onsetE*eighthMs);
+      (this._timeouts=this._timeouts||[]).push(id);
+    });
+  },
+  stopPlay(){
+    (this._timeouts||[]).forEach(t=>clearTimeout(t));
+    this._timeouts=[];
+    Audio_.stopAll();
+  },
+  download(){
+    const svgEl = $('#cSvgWrap svg');
+    if(!svgEl){ alert('먼저 리듬을 만들어주세요.'); return; }
+    const w = parseFloat(svgEl.getAttribute('width')), h=parseFloat(svgEl.getAttribute('height'));
+    const xml = new XMLSerializer().serializeToString(svgEl);
+    const svgBlob = new Blob([xml], {type:'image/svg+xml;charset=utf-8'});
+    const url = URL.createObjectURL(svgBlob);
+    const img = new Image();
+    img.onload = ()=>{
+      const canvas = document.createElement('canvas');
+      canvas.width=w+20; canvas.height=h+20;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.drawImage(img,10,10);
+      URL.revokeObjectURL(url);
+      const a = document.createElement('a');
+      const d = new Date(); const pad=n=>String(n).padStart(2,'0');
+      a.download = `리듬악보_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}.png`;
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    };
+    img.src = url;
+  },
+  saveToGame(){
+    if(!this.state.measuresTokens.length){ alert('먼저 리듬을 만들어주세요.'); return; }
+    const title = prompt('리듬 치기 게임에 저장할 곡 제목을 입력하세요.');
+    if(!title) return;
+    const list = Store.get(Store.KEYS.CUSTOM_SONGS, []);
+    list.push({ title, sig:this.state.sig, phrases:[ this.state.measuresTokens ] });
+    Store.set(Store.KEYS.CUSTOM_SONGS, list);
+    alert('저장했어요! 기능 B의 곡 선택 목록에서 확인해보세요.');
+  }
+};
+
+/* ===================================================================
+   기능 D: 오선보 작곡기 (클릭으로 음표 삽입 + 재생/정지)
+   -----------------------------------------------------------------
+   구현 단순화: 임의 위치에 자유롭게 음표를 놓는 완전한 편집 대신,
+   "선택한 음가로 오선보의 원하는 높이를 클릭하면 항상 현재 마디의
+   다음 빈 자리에 음표가 순서대로 추가"되는 방식으로 단순화했다.
+   이미 놓인 음표를 클릭하면 그 음표가 삭제된다. 박자는 4/4로 고정.
+=================================================================== */
+const FeatureD = {
+  state:{ measures:[[]], selectedDur:'Q', bpm:100, playing:false, timeouts:[], rafId:null, history:[] },
+  DUR_LABELS:{W:'온음표',Hd:'점2분',H:'2분음표',Qd:'점4분',Q:'4분음표',E:'8분음표',S:'16분음표',Qr:'4분쉼표',Er:'8분쉼표'},
+  init(){
+    const panel = $('#tab-d');
+    panel.innerHTML = `
+      <h2 class="panel-title" style="color:var(--accent-d);">✍️ D. 오선보 작곡기</h2>
+      <p class="panel-desc">아래에서 음가를 고르고, 오선보의 원하는 높이를 클릭해서 나만의 짧은 곡을 만들어보세요! (4/4박자, 항상 마디 끝에 순서대로 추가돼요)</p>
+      <div class="card row" id="dPalette"></div>
+      <div class="card">
+        <div id="dStaffWrap" class="svg-wrap"></div>
+        <div class="row" style="margin-top:8px;">
+          <button class="btn" onclick="FeatureD.addMeasure()">➕ 마디 추가</button>
+          <button class="btn" onclick="FeatureD.removeMeasure()">➖ 마디 삭제</button>
+          <button class="btn" onclick="FeatureD.undo()">↩️ 되돌리기</button>
+          <button class="btn btn-bad" onclick="FeatureD.clearAll()">🗑 전체 지우기</button>
+        </div>
+      </div>
+      <div class="card row">
+        <div><label class="field-label">템포(BPM)</label><input type="range" id="dBpm" min="60" max="160" value="100"><span id="dBpmVal">100</span></div>
+        <button class="btn btn-primary-d" id="dPlayBtn" onclick="FeatureD.play()">▶️ 재생</button>
+        <button class="btn btn-bad" id="dStopBtn" onclick="FeatureD.stop()" disabled>⏹ 정지</button>
+      </div>
+    `;
+    const pal = $('#dPalette');
+    Object.keys(this.DUR_LABELS).forEach(k=>{
+      const btn = el('button',{class:'btn dur-btn'+(k==='Q'?' selected':''),'data-k':k,onclick:`FeatureD.selectDur('${k}')`});
+      btn.innerHTML = `<div>${this.DUR_LABELS[k]}</div><div style="margin-top:2px;">${miniGlyphSVG(k)}</div>`;
+      pal.appendChild(btn);
+    });
+    $('#dBpm').oninput = e=>{ this.state.bpm=parseInt(e.target.value); $('#dBpmVal').textContent=e.target.value; };
+    this.render();
+  },
+  selectDur(k){ this.state.selectedDur=k; $all('.dur-btn').forEach(b=>b.classList.toggle('selected', b.dataset.k===k)); },
+  pushHistory(){ this.state.history.push(JSON.stringify(this.state.measures)); if(this.state.history.length>30) this.state.history.shift(); },
+  undo(){ const h=this.state.history.pop(); if(h){ this.state.measures=JSON.parse(h); this.render(); } },
+  addMeasure(){ if(this.state.measures.length>=8){ alert('마디는 최대 8개까지 만들 수 있어요.'); return; } this.pushHistory(); this.state.measures.push([]); this.render(); },
+  removeMeasure(){ if(this.state.measures.length<=1) return; this.pushHistory(); this.state.measures.pop(); this.render(); },
+  clearAll(){ this.pushHistory(); this.state.measures=[[]]; this.render(); },
+  measureUsedE(m){ return m.reduce((s,n)=>s+DUR_MAP[n.durKey],0); },
+  insertAt(staffIdx){
+    const s=this.state;
+    const durKey = s.selectedDur;
+    const isRest = durKey.endsWith('r');
+    const durE = DUR_MAP[isRest? durKey.slice(0,-1): durKey];
+    let m = s.measures[s.measures.length-1];
+    if(this.measureUsedE(m)+durE>8+0.001){
+      alert('이 마디에 더 이상 넣을 수 없어요! "마디 추가" 버튼을 눌러 새 마디를 만들어보세요.');
+      return;
+    }
+    this.pushHistory();
+    m.push({ staffIdx, durKey, isRest });
+    this.render();
+  },
+  deleteNote(mi, ni){
+    this.pushHistory();
+    this.state.measures[mi].splice(ni,1);
+    this.render();
+  },
+  render(){
+    const width = Math.max(360, 90*this.state.measures.length+60);
+    const {svgOpen, svgClose} = renderStaffSVG(width);
+    let x = 90;
+    let inner='';
+    let barlines=`<line x1="70" y1="${noteY(8)-10}" x2="70" y2="${noteY(-2)+10}" stroke="#94A3B8" stroke-width="1.5"/>`;
+    this.state.measures.forEach((m,mi)=>{
+      m.forEach((n,ni)=>{
+        if(n.isRest){
+          inner += `<g class="dnote" data-mi="${mi}" data-ni="${ni}"><rect class="hitzone2" x="${x-30}" y="${noteY(4)-40}" width="60" height="60" fill="transparent"/>
+            <rect x="${x-9}" y="${noteY(4)-4}" width="18" height="7" rx="3" fill="#94A3B8"/></g>`;
+        } else {
+          let extra='';
+          if(['Hd','Qd'].includes(n.durKey)) extra += `<circle cx="${x+13}" cy="${noteY(n.staffIdx)}" r="2" fill="#8B5CF6"/>`;
+          if(!['H','Hd','W'].includes(n.durKey)){
+            extra += `<line x1="${x+7}" y1="${noteY(n.staffIdx)-2}" x2="${x+7}" y2="${noteY(n.staffIdx)-32}" stroke="#8B5CF6" stroke-width="2"/>`;
+            if(n.durKey==='E'||n.durKey==='S') extra += flagPath(x+7, noteY(n.staffIdx)-32, 1).replace(/#1F2933/g,'#8B5CF6');
+            if(n.durKey==='S') extra += flagPath(x+7, noteY(n.staffIdx)-32, 2).replace(/#1F2933/g,'#8B5CF6');
+          } else if(n.durKey!=='W'){
+            extra += `<line x1="${x+7}" y1="${noteY(n.staffIdx)-2}" x2="${x+7}" y2="${noteY(n.staffIdx)-32}" stroke="#8B5CF6" stroke-width="2"/>`;
+          }
+          inner += `<g class="dnote" data-mi="${mi}" data-ni="${ni}"><rect class="hitzone2" x="${x-30}" y="${noteY(8)-10}" width="60" height="${noteY(-2)-noteY(8)+20}" fill="transparent"/>
+            ${noteHeadMarkup(x, n.staffIdx, n.durKey!=='W'&&n.durKey!=='H'&&n.durKey!=='Hd', extra).replace(/#334155/g,'#8B5CF6')}</g>`;
+        }
+        x += 46;
+      });
+      x += 30;
+      barlines += `<line x1="${x-15}" y1="${noteY(8)-10}" x2="${x-15}" y2="${noteY(-2)+10}" stroke="#94A3B8" stroke-width="1.5"/>`;
+    });
+    const wrap = $('#dStaffWrap');
+    wrap.innerHTML = svgOpen.replace('viewBox="0 0 '+width, 'viewBox="0 0 '+Math.max(width,x+40))+barlines+inner+svgClose;
+    const svgEl = wrap.querySelector('svg');
+    svgEl.style.cursor='pointer';
+    svgEl.onclick = (e)=>{
+      const target = e.target.closest('.dnote');
+      if(target){ this.deleteNote(parseInt(target.dataset.mi), parseInt(target.dataset.ni)); return; }
+      const rect = svgEl.getBoundingClientRect();
+      const scale = svgEl.viewBox.baseVal.width / rect.width;
+      const py = (e.clientY-rect.top)*scale;
+      let bestIdx=0, bestDist=Infinity;
+      for(let i=-4;i<=10;i++){ const d=Math.abs(noteY(i)-py); if(d<bestDist){ bestDist=d; bestIdx=i; } }
+      this.insertAt(bestIdx);
+    };
+  },
+  play(){
+    if(this.state.playing) return;
+    Audio_.ensure();
+    const s=this.state;
+    const beatMs = 60000/s.bpm; // 4/4 기준 1박=4분음표
+    const eighthMs = beatMs/2;
+    let onset=0; const events=[];
+    s.measures.forEach((m,mi)=>m.forEach((n,ni)=>{
+      const d = DUR_MAP[n.isRest? n.durKey.slice(0,-1):n.durKey];
+      events.push({onset, durE:d, n, mi, ni});
+      onset += d;
+    }));
+    const totalMs = onset*eighthMs;
+    s.playing=true; s.timeouts=[];
+    $('#dPlayBtn').disabled=true; $('#dStopBtn').disabled=false;
+    events.forEach(ev=>{
+      if(!ev.n.isRest){
+        const t = setTimeout(()=>{
+          const freq = freqForIndex(ev.n.staffIdx);
+          const durMs = ev.durE*eighthMs;
+          const ctx = Audio_.ensure(); const t0=ctx.currentTime;
+          const osc=ctx.createOscillator(); const gain=ctx.createGain();
+          osc.type='sine'; osc.frequency.value=freq;
+          gain.gain.setValueAtTime(0.001,t0); gain.gain.linearRampToValueAtTime(0.35,t0+0.015);
+          gain.gain.exponentialRampToValueAtTime(0.0001, t0+durMs/1000);
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.start(t0); osc.stop(t0+durMs/1000+0.03);
+        }, ev.onset*eighthMs);
+        s.timeouts.push(t);
+      }
+    });
+    const start = performance.now();
+    const raf=()=>{
+      if(!s.playing) return;
+      const elapsed = performance.now()-start;
+      $all('.dnote', $('#dStaffWrap')).forEach(g=>{
+        const mi=parseInt(g.dataset.mi), ni=parseInt(g.dataset.ni);
+        const ev = events.find(e2=>e2.mi===mi && e2.ni===ni);
+        const onsetMs = ev? ev.onset*eighthMs : -1;
+        const endMs = ev? (ev.onset+ev.durE)*eighthMs : -1;
+        g.classList.toggle('hl', ev && elapsed>=onsetMs && elapsed<endMs);
+      });
+      if(elapsed<totalMs+60){ s.rafId=requestAnimationFrame(raf); } else { this.finishPlay(); }
+    };
+    s.rafId=requestAnimationFrame(raf);
+    s.timeouts.push(setTimeout(()=>this.finishPlay(), totalMs+80));
+  },
+  finishPlay(){
+    this.state.playing=false;
+    cancelAnimationFrame(this.state.rafId);
+    $('#dPlayBtn').disabled=false; $('#dStopBtn').disabled=true;
+  },
+  stop(){
+    this.state.timeouts.forEach(t=>clearTimeout(t));
+    this.state.timeouts=[];
+    cancelAnimationFrame(this.state.rafId);
+    Audio_.stopAll();
+    this.finishPlay();
+  }
+};
+function freqForIndex(index){
+  const degree = index+2;
+  const octave = Math.floor(degree/7);
+  const deg = ((degree%7)+7)%7;
+  const semis=[0,2,4,5,7,9,11];
+  const semitone = octave*12+semis[deg];
+  return 261.63*Math.pow(2, semitone/12);
+}
+
+/* ===================================================================
+   교사용 페이지
+   -----------------------------------------------------------------
+   이 로그인은 진짜 계정 인증이 아니라, 학생이 실수로 설정을 바꾸지
+   못하게 막는 "화면 잠금" 수준이다. 비밀번호는 아래 상수 위치
+   (Store.KEYS.TEACHER_PW, 기본값 "0000")에서 바꿀 수 있다.
+=================================================================== */
+const Teacher = {
+  failCount:0, lockedUntil:0,
+  openLoginModal(){
+    if(Date.now()<this.lockedUntil){
+      $('#teacherPwError').textContent='너무 여러 번 틀렸어요. 잠시 후 다시 시도해주세요.';
+    } else { $('#teacherPwError').textContent=''; }
+    $('#teacherPwInput').value='';
+    $('#teacherPwModal').classList.add('show');
+  },
+  closeLoginModal(){ $('#teacherPwModal').classList.remove('show'); },
+  submitLogin(){
+    if(Date.now()<this.lockedUntil){ return; }
+    const pw = Store.get(Store.KEYS.TEACHER_PW, '0000');
+    if($('#teacherPwInput').value === pw){
+      this.failCount=0;
+      this.closeLoginModal();
+      this.openPanel();
+    } else {
+      this.failCount++;
+      if(this.failCount>=5){
+        this.lockedUntil = Date.now()+30000;
+        $('#teacherPwError').textContent='5회 오답! 30초 후 다시 시도해주세요.';
+      } else {
+        $('#teacherPwError').textContent='비밀번호가 틀렸어요.';
+      }
+    }
+  },
+  openPanel(){
+    $('#teacherPanelBody').innerHTML = this.renderPanelHTML();
+    $('#teacherPanelModal').classList.add('show');
+    this.wirePanel();
+  },
+  closePanel(){ $('#teacherPanelModal').classList.remove('show'); },
+  renderPanelHTML(){
+    const settings = getSettings();
+    const customSongs = Store.get(Store.KEYS.CUSTOM_SONGS, []);
+    return `
+      <h3>1) 곡 관리 (기능 B "곡 선택 모드")</h3>
+      <div style="font-size:12px;color:var(--ink-soft);">기본 제공 6곡은 수정할 수 없고, 아래에서 새 곡을 추가할 수 있어요. 마디 입력 형식: 한 줄=한 마디, 콤마로 구분 (예: Q,E,E,Q)</div>
+      <ul>${customSongs.map((s,i)=>`<li>${s.title} (${s.sig}) <button class="btn" onclick="Teacher.deleteSong(${i})">삭제</button></li>`).join('')||'<li>추가된 곡 없음</li>'}</ul>
+      <div class="row">
+        <input type="text" id="tSongTitle" placeholder="곡 제목">
+        <select id="tSongSig">${Object.keys(TIME_SIGS).map(s=>`<option value="${s}">${s}</option>`).join('')}</select>
+      </div>
+      <textarea id="tSongPattern" placeholder="Q,E,E,Q&#10;Hd,Qr"></textarea>
+      <button class="btn" onclick="Teacher.addSong()">곡 추가</button>
+      <div id="tSongMsg" style="font-size:12px;"></div>
+
+      <h3>2) 기본 패턴 관리 (기능 B "기본 패턴 모드")</h3>
+      <div class="row">
+        <select id="tPatSig">${Object.keys(TIME_SIGS).map(s=>`<option value="${s}">${s}</option>`).join('')}</select>
+        <input type="text" id="tPatTokens" placeholder="예: Q,E,E,Q">
+        <button class="btn" onclick="Teacher.addBasePattern()">패턴 추가</button>
+      </div>
+      <div id="tPatMsg" style="font-size:12px;"></div>
+
+      <h3>3) 설정값 조정</h3>
+      <div class="row">
+        <div><label class="field-label">BPM 범위</label>
+          <input type="number" id="tBpmMin" value="${settings.bpmMin}" style="width:70px;"> ~
+          <input type="number" id="tBpmMax" value="${settings.bpmMax}" style="width:70px;">
+        </div>
+        <div><label class="field-label">타이밍 허용오차(ms)</label>
+          완벽 <input type="number" id="tTolPerfect" value="${settings.tolerancePerfect}" style="width:70px;">
+          굿 <input type="number" id="tTolGood" value="${settings.toleranceGood}" style="width:70px;">
+        </div>
+      </div>
+      <div class="row">
+        <div><label class="field-label">문항 수 옵션(콤마)</label><input type="text" id="tQCounts" value="${settings.questionCounts.join(',')}"></div>
+        <div><label class="field-label">등급 기준 점수 (A/B/C)</label>
+          <input type="number" id="tGA" value="${settings.gradeThresholds.A}" style="width:60px;">
+          <input type="number" id="tGB" value="${settings.gradeThresholds.B}" style="width:60px;">
+          <input type="number" id="tGC" value="${settings.gradeThresholds.C}" style="width:60px;">
+        </div>
+      </div>
+      <button class="btn btn-good" onclick="Teacher.saveSettings()">설정 저장</button>
+
+      <h3>4) 비밀번호 변경</h3>
+      <div class="row"><input type="password" id="tNewPw" placeholder="새 비밀번호"><button class="btn" onclick="Teacher.changePw()">변경</button></div>
+
+      <h3>5) 초기화</h3>
+      <button class="btn btn-bad" onclick="Teacher.resetAll()">기본값으로 되돌리기 (추가한 곡/패턴/설정 모두 삭제)</button>
+    `;
+  },
+  wirePanel(){},
+  addSong(){
+    const title = $('#tSongTitle').value.trim();
+    const sig = $('#tSongSig').value;
+    const lines = $('#tSongPattern').value.split('\n').map(l=>l.trim()).filter(Boolean);
+    const measures = lines.map(l=>l.split(',').map(t=>t.trim()).filter(Boolean));
+    if(!title || !measures.length){ $('#tSongMsg').innerHTML='<span class="feedback-bad">제목과 마디를 입력해주세요.</span>'; return; }
+    const errs = validateMeasures(measures, sig);
+    if(errs.length){ $('#tSongMsg').innerHTML = `<span class="feedback-bad">${errs.join(' / ')}</span>`; return; }
+    const list = Store.get(Store.KEYS.CUSTOM_SONGS, []);
+    list.push({ title, sig, phrases:[measures] });
+    Store.set(Store.KEYS.CUSTOM_SONGS, list);
+    $('#tSongMsg').innerHTML = '<span class="feedback-good">추가했어요!</span>';
+    this.openPanel();
+  },
+  deleteSong(i){
+    const list = Store.get(Store.KEYS.CUSTOM_SONGS, []);
+    list.splice(i,1);
+    Store.set(Store.KEYS.CUSTOM_SONGS, list);
+    this.openPanel();
+  },
+  addBasePattern(){
+    const sig = $('#tPatSig').value;
+    const tokens = $('#tPatTokens').value.split(',').map(t=>t.trim()).filter(Boolean);
+    const errs = validateMeasures([tokens], sig);
+    if(errs.length){ $('#tPatMsg').innerHTML = `<span class="feedback-bad">${errs.join(' / ')}</span>`; return; }
+    const custom = Store.get(Store.KEYS.CUSTOM_BASEPATTERNS, {});
+    custom[sig] = (custom[sig]||[]).concat([tokens]);
+    Store.set(Store.KEYS.CUSTOM_BASEPATTERNS, custom);
+    $('#tPatMsg').innerHTML = '<span class="feedback-good">추가했어요!</span>';
+  },
+  saveSettings(){
+    const settings = {
+      bpmMin: parseInt($('#tBpmMin').value), bpmMax: parseInt($('#tBpmMax').value),
+      tolerancePerfect: parseInt($('#tTolPerfect').value), toleranceGood: parseInt($('#tTolGood').value),
+      questionCounts: $('#tQCounts').value.split(',').map(n=>parseInt(n.trim())).filter(n=>!isNaN(n)),
+      gradeThresholds: { A:parseInt($('#tGA').value), B:parseInt($('#tGB').value), C:parseInt($('#tGC').value) }
+    };
+    Store.set(Store.KEYS.SETTINGS, settings);
+    alert('설정을 저장했어요. (일부 화면은 탭을 다시 눌러야 반영돼요)');
+  },
+  changePw(){
+    const v = $('#tNewPw').value;
+    if(v.length<2){ alert('비밀번호를 2자 이상 입력해주세요.'); return; }
+    Store.set(Store.KEYS.TEACHER_PW, v);
+    alert('비밀번호를 변경했어요.');
+  },
+  resetAll(){
+    if(!confirm('정말 모두 초기화할까요? 추가한 곡/기본 패턴/설정이 모두 삭제됩니다.')) return;
+    Store.remove(Store.KEYS.CUSTOM_SONGS);
+    Store.remove(Store.KEYS.CUSTOM_BASEPATTERNS);
+    Store.remove(Store.KEYS.SETTINGS);
+    this.openPanel();
+  }
+};
+
+/* ===================================================================
+   앱 초기화 및 탭 전환
+=================================================================== */
+const App = {
+  switchTab(t){
+    $all('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===t));
+    $all('.tab-panel').forEach(p=>p.classList.remove('active'));
+    $('#tab-'+t).classList.add('active');
+  },
+  init(){
+    Nickname.refreshBadge();
+    FeatureA.init();
+    FeatureB.init();
+    FeatureC.init();
+    FeatureD.init();
+    // 사용자가 페이지 어디든 처음 누르는 순간 오디오 컨텍스트를 미리 깨워둔다.
+    // 이렇게 하면 실제로 리듬 치기 게임에서 처음 "탁"을 칠 때
+    // 컨텍스트가 잠들어있다가 뒤늦게 깨어나며 생기는 첫 딜레이를 줄일 수 있다.
+    document.addEventListener('pointerdown', ()=>Audio_.ensure(), {once:true});
+    document.addEventListener('keydown', ()=>Audio_.ensure(), {once:true});
+    // 최초 방문 시 닉네임 로그인 유도
+    if(!Nickname.get()){
+      setTimeout(()=>Nickname.openModal(), 400);
+    }
+  }
+};
+App.init();
+</script>
+</body>
+</html>
